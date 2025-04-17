@@ -12,39 +12,44 @@ service JobsService {
 
 // Start Messages
 message JobStartRequest {
-  string user = 1;
-  string command = 2;
+  string command = 1;
 }
 
-enum StartFailedReason {
-  StartFailedReason_EXITED_INSTANTLY = 0;
-  StartFailedReason_INVALID_PERMISSIONS = 1;
-  StartFailedReason_COMMAND_NOT_FOUND = 2;
+enum JobStartStatus {
+  JobStartStatus_RUNNING = 0;
+  JobStartStatus_EXITED_INSTANTLY = 1;
+  JobStartStatus_INVALID_PERMISSIONS = 2;
+  JobStartStatus_COMMAND_NOT_FOUND = 3;
 }
 
 message JobStartResponse {
-  int32 jobId = 1;
-  bool isActive = 2;
-  StartFailedReason Reason = 3;
-  string errorMessage = 4;
+  string jobId = 1;
+  JobStartStatus Status = 2;
+  string errorMessage = 3;
 }
 
 // Stop/Query/Tail Request Message
 message JobIdRequest {
-  string user = 1;
-  int32 jobId = 2;
+  string jobId = 1;
 }
 
 // Stop Response
 message JobStopResponse {
-  bool endedCleanly = 1;
-  string errorMessage = 2;
+  bool forceEnded = 1;
+  int32 exitCode = 2;
+  string errorMessage = 3;
 }
 
 // Query Response
+enum JobStatus {
+  JobStatus_RUNNING = 0;
+  JobStatus_ENDED = 1;
+  JobStatus_FORCE_ENDED = 2;
+}
+
 message JobStatusResponse {
-  bool isActive = 1;
-  bool endedCleanly = 2;
+  JobStatus jobStatus = 1;
+  int32 exitCode = 2;
   string errorMessage = 3;
 }
 
