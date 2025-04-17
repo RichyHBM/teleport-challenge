@@ -16,10 +16,17 @@ message JobStartRequest {
   string command = 2;
 }
 
+enum StartFailedReason {
+  StartFailedReason_EXITED_INSTANTLY = 0;
+  StartFailedReason_INVALID_PERMISSIONS = 1;
+  StartFailedReason_COMMAND_NOT_FOUND = 2;
+}
+
 message JobStartResponse {
   int32 jobId = 1;
   bool isActive = 2;
-  string errorMessage = 3;
+  StartFailedReason Reason = 3;
+  string errorMessage = 4;
 }
 
 // Stop/Query/Tail Request Message
@@ -36,12 +43,12 @@ message JobStopResponse {
 
 // Query Response
 message JobStatusResponse {
-  bool isEnded = 1;
+  bool isActive = 1;
   bool endedCleanly = 2;
   string errorMessage = 3;
 }
 
 // Tail Message - Stream
 message JobOutputResponse {
-  string message = 1;
+  bytes message = 1;
 }

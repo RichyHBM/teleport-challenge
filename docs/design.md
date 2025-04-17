@@ -49,7 +49,7 @@ to identify the server endpoint:
 
 - Start
    ```
-   program start --server=<server endpoint> <command>
+   program start --server=<server endpoint> <command --arguments>
    ```
 
    This will then return a job ID that will be used in the remaining commands to reference this job,
@@ -73,8 +73,8 @@ to identify the server endpoint:
    program tail --server=<server endpoint> --job=<job ID>
    ```
    The tail command will act in a similar way to the `tail -f` command, executing for the length
-   of the job, and returning a full history of the jobs output. As per the requirements, passing in
-   an ended/invalid job will do nothing and return immediately.
+   of the job, and returning a full history of the jobs output. Passing in a previously ended job
+   should return its full output history.
 
 Ideally there would also be additional commands for things like fetching a list of jobs started by
 the current user, as well as a history of jobs and their status, etc. But for the challenge this isn't
@@ -95,8 +95,8 @@ program serve --port=4567
 
 ### Authentication
 
-Authentication for the program will be done using mTLS, with self signed x509 CA certificates.
-The created certificates will be 2048 bit certificates using the sha256 hashing algorithm.
+Authentication for the program will be done using mTLS (TLS v1.3), with self signed x509 CA certificates.
+The created certificates will be 256 bit elliptic-curve certificates using the sha256 hashing algorithm.
 For simplicity these will all be bundled in to the executable directly
 
 More info can be found in [known tradeoffs](#known-tradeoffs), on why this isn't optimal for production
@@ -126,6 +126,13 @@ but each new job will be configured as its own cgroup.
 Once the cgroup has been set up, the server will then execute the job using `SysProcAttr.CgroupFD`
 to ensure the job is added to the cgroup from the start.
 
+The proposed cgroup values will be as follows:
+
+- cpu.max: 2 cores, 100% `200000 100000`
+- memory.max: 1GB Max `1048576000`
+- io.max: 1GB Read, 100MB Write `MAJOR:MINOR rbytes=1048576000 wbytes=10485760 rios=1000000 wios=1000000`
+
+
 ### Streaming To Multiple Clients
 
 The streaming from host to host will be managed with gRPC, a new goroutine will be created for each new job,
@@ -135,6 +142,15 @@ ensure there are no race conditions, etc.
 When a client connects to retrieve the job output it will first need to read all existing data in memory, but
 will then need to wait for any new data until the program has ended, this means that along with the output
 a flag will also need to be kept so that any connected clients can know to end a connection.
+
+To achieve this, a structure will need to exist that will keep check on the process still being ran and all
+output being read, blocking the client if so, and unblocking only when new output is available or the job has ended. This will likely be done with a goroutine reading output and passing it to each of the clients
+structure via channels, allowing the client to read the data as they are ready to receive it. For clients
+connecting later, that means that before adding their unique channel to the list of channels to forward to,
+the current up to date output will need to be pushed to it.
+
+This structure will need to be per client so as to not have clients interfere with each other, it can also
+manage reading the output data in a thread safe way and forwarding this to the clients via gRPC.
 
 One consideration is that the process may run for a long period of time
 causing excessive output and causing a large amount of memory to be consumed whilst storing this.
