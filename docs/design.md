@@ -106,7 +106,7 @@ More info can be found in [known tradeoffs](#known-tradeoffs), on why this isn't
 ### Authorization
 
 Authorization for the program will use simple methods for identifying the user,
-using the current OS user to get their username, this will then be sent up to the server
+the common name field in the key's subject to get their username, this will then be sent up to the server
 which will then look up the user and see what permissions they have access to.
 These permissions will just be hard coded, but would ideally come from a config file or service
 
@@ -154,7 +154,9 @@ To achieve this, a structure will need to exist that will keep check on the proc
 output being read, blocking the client if so, and unblocking only when new output is available or the job has ended. This will likely be done with a goroutine reading output and passing it to each of the clients
 structure via channels, allowing the client to read the data as they are ready to receive it. For clients
 connecting later, that means that before adding their unique channel to the list of channels to forward to,
-the current up to date output will need to be pushed to it.
+the current up to date output will need to be pushed to it. The structure containing the channels will also need
+to hold an indexing counter to keep track of what position each client has read up to, this would ensure if
+a channel fills up before it can be fully read from, we are able to keep the correct position in the stream.
 
 This structure will need to be per client so as to not have clients interfere with each other, it can also
 manage reading the output data in a thread safe way and forwarding this to the clients via gRPC.
