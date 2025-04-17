@@ -59,7 +59,9 @@ to identify the server endpoint:
    ```
    program stop --server=<server endpoint> --job=<job ID>
    ```
-   This will end the specified job, returning if it exited cleanly
+   This will end the specified job, returning if it exited cleanly. This will be a blocking call
+   returning once the job has ended and returning to the user if it was a clean exit or if the job
+   had to be force ended.
 
 - Query
    ```
@@ -105,7 +107,12 @@ More info can be found in [known tradeoffs](#known-tradeoffs), on why this isn't
 
 Authorization for the program will use simple methods for identifying the user,
 using the current OS user to get their username, this will then be sent up to the server
-which will then look up the user and see what permissions they have access to. These permissions will just be hard coded, but would ideally come from a config file or service
+which will then look up the user and see what permissions they have access to.
+These permissions will just be hard coded, but would ideally come from a config file or service
+
+The permissions would look at the job command issued and check that the given user has permissions to
+run a specific command, for this example that could be as simple as storing a list of strings on the
+server and checking these against the passed up command.
 
 As with the above section, more information can be found in [known tradeoffs](#known-tradeoffs) on improvements that could be made.
 
