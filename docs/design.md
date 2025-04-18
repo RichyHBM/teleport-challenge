@@ -55,13 +55,22 @@ to identify the server endpoint:
    This will then return a job ID that will be used in the remaining commands to reference this job,
    alternatively it may print an error message if the job was unable to start for any reason.
 
+   The returning job ID will use UUIDs to ensure colliding IDs are not generated, using a library such as
+   https://pkg.go.dev/github.com/google/UUID
+
 - Stop
    ```
    program stop --server=<server endpoint> --job=<job ID>
    ```
-   This will end the specified job, returning if it exited cleanly. This will be a blocking call
-   returning once the job has ended and returning to the user if it was a clean exit or if the job
-   had to be force ended.
+   This will end the specified job, returning it's exit code. This will be a blocking call
+   returning once the job has ended and returning to the user if it required calling Kill, and the jobs
+   exit code.
+
+   The stop process will take the `os.Process` calling `.Kill()` on it if it has not already ended.
+   The return call will return the value in the variable `os.ProcessState.ExitCode`
+
+   If the program had already ended at the point at which stop is called, the field
+   `JobStopResponse.forceEnded` will be false, otherwise Kill will be called on the process and it will be true.
 
 - Query
    ```
