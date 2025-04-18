@@ -148,6 +148,7 @@ The proposed cgroup values will be as follows:
 - memory.max: 1GB Max `1048576000`
 - io.max: 1GB Read, 100MB Write `MAJOR:MINOR rbytes=1048576000 wbytes=10485760 rios=1000000 wios=1000000`
 
+The IO limits should apply to all devices, as such entries should be added for each.
 
 ### Streaming To Multiple Clients
 
