@@ -187,6 +187,10 @@ running) but for this exercise this will all be kept in memory.
    the program should stop taking input or commands after the pattern has been found, running just the
    initial segment, or alternatively error out informing the user they must change their command logic.
 
+   To help mitigate this, arguments can be parametrized at the point at which the server executes the job,
+   alternatively the server could also strip non alphanumeric characters, though for this challenge it will just
+   use the parametrized approach
+
 - No Command Checks
 
    The current system will allow any commands to be run, this means the user could issue an `rm` command
@@ -206,11 +210,8 @@ This would likely be some form of configuration tool to manage jobs and user per
 this could also group permissions to user tags, allowing users with a specific tag to have access to
 all permissions linked, etc.
 
-- For authorization the executable will fetch the current user, in this case trying `os/user` package
-(with an additional override for testing/forcing specific users),
-in production this would likely want to be hooked up to LDAP or equivalent, or based on private/public
-keys containing the user in one of their fields, using the latter would also mean being able to use these
-for both authn/z
+- For authorization the executable will fetch the current user, based on private/public
+keys containing the user in one of their fields (with an additional override for testing/forcing specific users)
 
 - Long running jobs could cause memory issues, ideally this would be stored on disk or in a 3rd party storage,
 but for this challenge it will remain in memory
