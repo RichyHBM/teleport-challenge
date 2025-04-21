@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+option go_package = "github.com/richyhbm/teleport-challenge/proto";
+
+// Main Server gRPC API
+service JobsService {
+  rpc Start(JobStartRequest) returns (JobStartResponse);
+  rpc Stop(JobIdRequest) returns (JobStopResponse);
+  rpc Status(JobIdRequest) returns (JobStatusResponse);
+  rpc Tail(JobIdRequest) returns (stream JobOutputResponse);
+}
+
+// Start Messages
+message JobStartRequest {
+  string command = 1;
+}
+
+enum JobStartStatus {
+  JobStartStatus_RUNNING = 0;
+  JobStartStatus_EXITED_INSTANTLY = 1;
+  JobStartStatus_INVALID_PERMISSIONS = 2;
+  JobStartStatus_COMMAND_NOT_FOUND = 3;
+}
+
+message JobStartResponse {
+  string jobId = 1;
+  JobStartStatus Status = 2;
+  optional string errorMessage = 3;
+}
+
+// Stop/Query/Tail Request Message
+message JobIdRequest {
+  string jobId = 1;
+}
+
+// Stop Response
+message JobStopResponse {
+  bool forceEnded = 1;
+  int32 exitCode = 2;
+  optional string errorMessage = 3;
+}
+
+// Query Response
+enum JobStatus {
+  JobStatus_RUNNING = 0;
+  JobStatus_ENDED = 1;
+  JobStatus_FORCE_ENDED = 2;
+}
+
+message JobStatusResponse {
+  JobStatus jobStatus = 1;
+  optional int32 exitCode = 2;
+  optional string errorMessage = 3;
+}
+
+// Tail Message - Stream
+message JobOutputResponse {
+  bytes message = 1;
+}
