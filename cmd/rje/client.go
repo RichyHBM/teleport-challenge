@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -201,5 +202,28 @@ func tail(args []string) error {
 		}
 	}()
 
-	return nil
+	// Create the gRPC client
+	jobServiceClient := proto.NewJobsServiceClient(grpcClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	// Create account
+	jobResponse, err := jobServiceClient.Tail(ctx, &proto.JobIdRequest{JobId: flags.jobId})
+	if err != nil {
+		return err
+	}
+
+	for {
+		jobTailResponse, err := jobResponse.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			} else {
+				return err
+			}
+		}
+
+		fmt.Println(string(jobTailResponse.Message))
+	}
 }
