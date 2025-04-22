@@ -40,7 +40,11 @@ func main() {
 	subcommand := os.Args[1]
 	if function, hasKey := commandFunctions[subcommand]; hasKey {
 		if err := function(os.Args[1:]); err != nil {
-			fmt.Println(err.Error())
+			// if help arg passed in, dont print error
+			if err.Error() != "pflag: help requested" {
+				fmt.Println(err.Error())
+			}
+
 		}
 	} else {
 		fmt.Println("subcommand not found, run program without arguments to see usage")

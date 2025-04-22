@@ -12,7 +12,7 @@ service JobsService {
 
 // Start Messages
 message JobStartRequest {
-  string command = 1;
+  repeated string command = 1;
 }
 
 enum JobStartStatus {

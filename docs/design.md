@@ -49,7 +49,7 @@ to identify the server endpoint:
 
 - Start
    ```
-   program start --server=<server endpoint> <command --arguments>
+   program start --server=<server endpoint> -- <command --arguments>
    ```
 
    This will then return a job ID that will be used in the remaining commands to reference this job,

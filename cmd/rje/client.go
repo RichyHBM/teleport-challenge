@@ -1,45 +1,94 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
+	"time"
 
 	"github.com/orsinium-labs/cliff"
+	"github.com/richyhbm/teleport-challenge/certs"
+	"github.com/richyhbm/teleport-challenge/proto"
+	"google.golang.org/grpc"
 )
 
-// Start is more complex than other methods as we need to
-// isolate program arguments from job command/arguments
-func start(args []string) error {
+func splitFlagsAndRemoteCommand(args []string) (StartArgs, []string, error) {
 	if len(args) <= 1 {
-		return errors.New("program requires more arguments")
+		return StartArgs{}, nil, errors.New("program requires more arguments")
 	}
 
 	// Figure out where the program arguments end in the args array
 	argumentsEndIndex := 1
+	foundSeparator := false
 
-	if args[1] == "-h" || args[1] == "--help" {
-		argumentsEndIndex++
-	} else if args[1] == "-s" || args[1] == "--server" {
-		if len(args) > 2 {
-			argumentsEndIndex += 2
-		} else {
-			argumentsEndIndex += 1
+	for i := argumentsEndIndex; i < len(args); i++ {
+		arg := args[i]
+
+		if arg == "-h" || arg == "--help" {
+			argumentsEndIndex++
+		} else if arg == "--" {
+			argumentsEndIndex = i
+			foundSeparator = true
 		}
+	}
+
+	if len(args) < argumentsEndIndex || !foundSeparator {
+		return StartArgs{}, nil, errors.New("incorrect amount of arguments found")
 	}
 
 	// Only pass valid args to cliff, isolate job command + args
 	flags, err := cliff.Parse(os.Stderr, args[:argumentsEndIndex], startFlags)
 	if err != nil {
+		return StartArgs{}, nil, err
+	}
+
+	remoteJob := args[argumentsEndIndex+1:]
+	if len(remoteJob) == 0 {
+		return StartArgs{}, nil, errors.New("no remote job command given")
+	}
+	return flags, remoteJob, nil
+}
+
+// Start is more complex than other methods as we need to
+// isolate program arguments from job command/arguments
+func start(args []string) error {
+	flags, remoteJob, err := splitFlagsAndRemoteCommand(args)
+	if err != nil {
 		return err
 	}
 
-	remoteJob := args[argumentsEndIndex:]
-	if len(remoteJob) == 0 {
-		return errors.New("no remote job command given")
+	cert, err := certs.LoadCerts(flags.certFile, flags.keyFile, flags.caFile, true)
+	if err != nil {
+		return err
 	}
 
-	fmt.Printf("start not implemented: %s, %s", flags.server, remoteJob)
+	grpcClient, err := grpc.NewClient(flags.server, grpc.WithTransportCredentials(cert))
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err = grpcClient.Close()
+		if err != nil {
+			log.Printf("Unable to close gRPC channel %v\n", err)
+		}
+	}()
+
+	// Create the gRPC client
+	jobServiceClient := proto.NewJobsServiceClient(grpcClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	// Create account
+	jobResponse, err := jobServiceClient.Start(ctx, &proto.JobStartRequest{Command: remoteJob})
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Job created: %s\n", jobResponse.JobId)
 	return nil
 }
 
@@ -49,7 +98,36 @@ func stop(args []string) error {
 		return err
 	}
 
-	fmt.Printf("stop not implemented: %s, %s", flags.server, flags.jobId)
+	cert, err := certs.LoadCerts(flags.certFile, flags.keyFile, flags.caFile, true)
+	if err != nil {
+		return err
+	}
+
+	grpcClient, err := grpc.NewClient(flags.server, grpc.WithTransportCredentials(cert))
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err = grpcClient.Close()
+		if err != nil {
+			log.Printf("Unable to close gRPC channel %v", err)
+		}
+	}()
+
+	// Create the gRPC client
+	jobServiceClient := proto.NewJobsServiceClient(grpcClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	// Create account
+	jobResponse, err := jobServiceClient.Stop(ctx, &proto.JobIdRequest{JobId: flags.jobId})
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Job ended with: %d, was force ended: %t\n", jobResponse.ExitCode, jobResponse.ForceEnded)
 	return nil
 }
 
@@ -59,7 +137,44 @@ func status(args []string) error {
 		return err
 	}
 
-	fmt.Printf("status not implemented: %s, %s", flags.server, flags.jobId)
+	cert, err := certs.LoadCerts(flags.certFile, flags.keyFile, flags.caFile, true)
+	if err != nil {
+		return err
+	}
+
+	grpcClient, err := grpc.NewClient(flags.server, grpc.WithTransportCredentials(cert))
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err = grpcClient.Close()
+		if err != nil {
+			log.Printf("Unable to close gRPC channel %v", err)
+		}
+	}()
+
+	// Create the gRPC client
+	jobServiceClient := proto.NewJobsServiceClient(grpcClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	// Create account
+	jobResponse, err := jobServiceClient.Status(ctx, &proto.JobIdRequest{JobId: flags.jobId})
+	if err != nil {
+		return err
+	}
+
+	switch jobResponse.JobStatus {
+	case proto.JobStatus_JobStatus_RUNNING:
+		fmt.Println("Job running")
+	case proto.JobStatus_JobStatus_ENDED:
+		fmt.Printf("Job ended with code with code: %d\n", jobResponse.ExitCode)
+	case proto.JobStatus_JobStatus_FORCE_ENDED:
+		fmt.Printf("Job force ended with code: %d\n", jobResponse.ExitCode)
+	}
+
 	return nil
 }
 
@@ -69,6 +184,22 @@ func tail(args []string) error {
 		return err
 	}
 
-	fmt.Printf("tail not implemented: %s, %s", flags.server, flags.jobId)
+	cert, err := certs.LoadCerts(flags.certFile, flags.keyFile, flags.caFile, true)
+	if err != nil {
+		return err
+	}
+
+	grpcClient, err := grpc.NewClient(flags.server, grpc.WithTransportCredentials(cert))
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err = grpcClient.Close()
+		if err != nil {
+			log.Printf("Unable to close gRPC channel %v", err)
+		}
+	}()
+
 	return nil
 }
