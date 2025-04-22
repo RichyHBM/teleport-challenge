@@ -44,15 +44,15 @@ func LoadCerts(certFile string, keyFile string, certAuthorityFile string, asClie
 	// Create the TLS configuration
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{cert},
+		ClientCAs:    certPool,
 		RootCAs:      certPool,
 		MinVersion:   tls.VersionTLS13,
 		MaxVersion:   tls.VersionTLS13,
-	}
-
-	if asClient {
-		tlsConfig.ClientCAs = certPool
+		ClientAuth:   tls.RequireAndVerifyClientCert,
 	}
 
 	// Return new TLS credentials based on the TLS configuration
-	return credentials.NewTLS(tlsConfig), nil
+	tls := credentials.NewTLS(tlsConfig)
+
+	return tls, nil
 }
