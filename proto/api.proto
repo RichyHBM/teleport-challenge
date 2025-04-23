@@ -25,7 +25,7 @@ enum JobStartStatus {
 message JobStartResponse {
   string jobId = 1;
   JobStartStatus Status = 2;
-  optional string errorMessage = 3;
+  string errorMessage = 3;
 }
 
 // Stop/Query/Tail Request Message
@@ -37,7 +37,7 @@ message JobIdRequest {
 message JobStopResponse {
   bool forceEnded = 1;
   int32 exitCode = 2;
-  optional string errorMessage = 3;
+  string errorMessage = 3;
 }
 
 // Query Response
@@ -49,8 +49,8 @@ enum JobStatus {
 
 message JobStatusResponse {
   JobStatus jobStatus = 1;
-  optional int32 exitCode = 2;
-  optional string errorMessage = 3;
+  int32 exitCode = 2;
+  string errorMessage = 3;
 }
 
 // Tail Message - Stream

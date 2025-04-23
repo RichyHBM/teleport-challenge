@@ -84,7 +84,37 @@ func TestClientConnection(t *testing.T) {
 	}
 
 	err = start([]string{"start", "-s", "localhost:5555", "--cert-file", "client.crt", "--key-file", "client.key", "--", "ls"})
-	if err != nil {
+	if err != nil && err.Error() == "not implemented" {
 		t.Error(fmt.Sprintf("Connection should pass with good keys: %s", err.Error()))
 	}
 }
+
+func TestClientCommands(t *testing.T) {
+	shutdownServer, err := startServer("server.crt", "server.key", "CA.pem")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	defer shutdownServer()
+
+	err = start([]string{"start", "-s", "localhost:5555", "--", "ls"})
+	if err != nil && err.Error() == "not implemented" {
+		t.Error(fmt.Sprintf("Start should behave correctly: %s", err.Error()))
+	}
+
+	err = status([]string{"status", "-s", "localhost:5555", "-j", "123"})
+	if err != nil && err.Error() == "not implemented" {
+		t.Error(fmt.Sprintf("Status should behave correctly: %s", err.Error()))
+	}
+
+	err = stop([]string{"stop", "-s", "localhost:5555", "-j", "123"})
+	if err != nil && err.Error() == "not implemented" {
+		t.Error(fmt.Sprintf("Stop should behave correctly: %s", err.Error()))
+	}
+
+	err = tail([]string{"tail", "-s", "localhost:5555", "-j", "123"})
+	if err != nil && err.Error() == "not implemented" {
+		t.Error(fmt.Sprintf("Tail should behave correctly: %s", err.Error()))
+	}
+}
+

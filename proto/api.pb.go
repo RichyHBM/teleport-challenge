@@ -172,7 +172,7 @@ type JobStartResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	JobId         string                 `protobuf:"bytes,1,opt,name=jobId,proto3" json:"jobId,omitempty"`
 	Status        JobStartStatus         `protobuf:"varint,2,opt,name=Status,proto3,enum=JobStartStatus" json:"Status,omitempty"`
-	ErrorMessage  *string                `protobuf:"bytes,3,opt,name=errorMessage,proto3,oneof" json:"errorMessage,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -222,8 +222,8 @@ func (x *JobStartResponse) GetStatus() JobStartStatus {
 }
 
 func (x *JobStartResponse) GetErrorMessage() string {
-	if x != nil && x.ErrorMessage != nil {
-		return *x.ErrorMessage
+	if x != nil {
+		return x.ErrorMessage
 	}
 	return ""
 }
@@ -278,7 +278,7 @@ type JobStopResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ForceEnded    bool                   `protobuf:"varint,1,opt,name=forceEnded,proto3" json:"forceEnded,omitempty"`
 	ExitCode      int32                  `protobuf:"varint,2,opt,name=exitCode,proto3" json:"exitCode,omitempty"`
-	ErrorMessage  *string                `protobuf:"bytes,3,opt,name=errorMessage,proto3,oneof" json:"errorMessage,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -328,8 +328,8 @@ func (x *JobStopResponse) GetExitCode() int32 {
 }
 
 func (x *JobStopResponse) GetErrorMessage() string {
-	if x != nil && x.ErrorMessage != nil {
-		return *x.ErrorMessage
+	if x != nil {
+		return x.ErrorMessage
 	}
 	return ""
 }
@@ -337,8 +337,8 @@ func (x *JobStopResponse) GetErrorMessage() string {
 type JobStatusResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	JobStatus     JobStatus              `protobuf:"varint,1,opt,name=jobStatus,proto3,enum=JobStatus" json:"jobStatus,omitempty"`
-	ExitCode      *int32                 `protobuf:"varint,2,opt,name=exitCode,proto3,oneof" json:"exitCode,omitempty"`
-	ErrorMessage  *string                `protobuf:"bytes,3,opt,name=errorMessage,proto3,oneof" json:"errorMessage,omitempty"`
+	ExitCode      int32                  `protobuf:"varint,2,opt,name=exitCode,proto3" json:"exitCode,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -381,15 +381,15 @@ func (x *JobStatusResponse) GetJobStatus() JobStatus {
 }
 
 func (x *JobStatusResponse) GetExitCode() int32 {
-	if x != nil && x.ExitCode != nil {
-		return *x.ExitCode
+	if x != nil {
+		return x.ExitCode
 	}
 	return 0
 }
 
 func (x *JobStatusResponse) GetErrorMessage() string {
-	if x != nil && x.ErrorMessage != nil {
-		return *x.ErrorMessage
+	if x != nil {
+		return x.ErrorMessage
 	}
 	return ""
 }
@@ -445,28 +445,24 @@ const file_api_proto_rawDesc = "" +
 	"\n" +
 	"\tapi.proto\"+\n" +
 	"\x0fJobStartRequest\x12\x18\n" +
-	"\acommand\x18\x01 \x03(\tR\acommand\"\x8b\x01\n" +
+	"\acommand\x18\x01 \x03(\tR\acommand\"u\n" +
 	"\x10JobStartResponse\x12\x14\n" +
 	"\x05jobId\x18\x01 \x01(\tR\x05jobId\x12'\n" +
-	"\x06Status\x18\x02 \x01(\x0e2\x0f.JobStartStatusR\x06Status\x12'\n" +
-	"\ferrorMessage\x18\x03 \x01(\tH\x00R\ferrorMessage\x88\x01\x01B\x0f\n" +
-	"\r_errorMessage\"$\n" +
+	"\x06Status\x18\x02 \x01(\x0e2\x0f.JobStartStatusR\x06Status\x12\"\n" +
+	"\ferrorMessage\x18\x03 \x01(\tR\ferrorMessage\"$\n" +
 	"\fJobIdRequest\x12\x14\n" +
-	"\x05jobId\x18\x01 \x01(\tR\x05jobId\"\x87\x01\n" +
+	"\x05jobId\x18\x01 \x01(\tR\x05jobId\"q\n" +
 	"\x0fJobStopResponse\x12\x1e\n" +
 	"\n" +
 	"forceEnded\x18\x01 \x01(\bR\n" +
 	"forceEnded\x12\x1a\n" +
-	"\bexitCode\x18\x02 \x01(\x05R\bexitCode\x12'\n" +
-	"\ferrorMessage\x18\x03 \x01(\tH\x00R\ferrorMessage\x88\x01\x01B\x0f\n" +
-	"\r_errorMessage\"\xa5\x01\n" +
+	"\bexitCode\x18\x02 \x01(\x05R\bexitCode\x12\"\n" +
+	"\ferrorMessage\x18\x03 \x01(\tR\ferrorMessage\"}\n" +
 	"\x11JobStatusResponse\x12(\n" +
 	"\tjobStatus\x18\x01 \x01(\x0e2\n" +
-	".JobStatusR\tjobStatus\x12\x1f\n" +
-	"\bexitCode\x18\x02 \x01(\x05H\x00R\bexitCode\x88\x01\x01\x12'\n" +
-	"\ferrorMessage\x18\x03 \x01(\tH\x01R\ferrorMessage\x88\x01\x01B\v\n" +
-	"\t_exitCodeB\x0f\n" +
-	"\r_errorMessage\"-\n" +
+	".JobStatusR\tjobStatus\x12\x1a\n" +
+	"\bexitCode\x18\x02 \x01(\x05R\bexitCode\x12\"\n" +
+	"\ferrorMessage\x18\x03 \x01(\tR\ferrorMessage\"-\n" +
 	"\x11JobOutputResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\fR\amessage*\x9f\x01\n" +
 	"\x0eJobStartStatus\x12\x1a\n" +
@@ -531,9 +527,6 @@ func file_api_proto_init() {
 	if File_api_proto != nil {
 		return
 	}
-	file_api_proto_msgTypes[1].OneofWrappers = []any{}
-	file_api_proto_msgTypes[3].OneofWrappers = []any{}
-	file_api_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

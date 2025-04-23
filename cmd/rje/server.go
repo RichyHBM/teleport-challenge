@@ -63,15 +63,11 @@ func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartReque
 		return nil, errors.New("empty request")
 	}
 
-	if uid, err := jSS.remoteJobRunner.Start(req.Command); err != nil {
-		return nil, err
-	} else {
-		return &proto.JobStartResponse{
-			JobId:        uid,
-			Status:       proto.JobStartStatus_JobStartStatus_RUNNING,
-			ErrorMessage: nil,
-		}, nil
-	}
+	return &proto.JobStartResponse{
+		JobId:        "",
+		Status:       proto.JobStartStatus_JobStartStatus_COMMAND_NOT_FOUND,
+		ErrorMessage: "not implemented",
+	}, nil
 }
 
 func (jSS *jobServiceServer) Stop(ctx context.Context, req *proto.JobIdRequest) (*proto.JobStopResponse, error) {
@@ -79,15 +75,11 @@ func (jSS *jobServiceServer) Stop(ctx context.Context, req *proto.JobIdRequest) 
 		return nil, errors.New("empty request")
 	}
 
-	if exitCode, forceExit, err := jSS.remoteJobRunner.Stop(req.JobId); err != nil {
-		return nil, err
-	} else {
-		return &proto.JobStopResponse{
-			ForceEnded:   forceExit,
-			ExitCode:     int32(exitCode),
-			ErrorMessage: nil,
-		}, nil
-	}
+	return &proto.JobStopResponse{
+		ForceEnded:   false,
+		ExitCode:     0,
+		ErrorMessage: "not implemented",
+	}, nil
 }
 
 func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest) (*proto.JobStatusResponse, error) {
@@ -95,20 +87,11 @@ func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest
 		return nil, errors.New("empty request")
 	}
 
-	if status, err := jSS.remoteJobRunner.Status(req.JobId); err != nil {
-		return nil, err
-	} else {
-		jobStatus := proto.JobStatus_JobStatus_ENDED
-		if status {
-			jobStatus = proto.JobStatus_JobStatus_RUNNING
-		}
-
-		return &proto.JobStatusResponse{
-			JobStatus:    jobStatus,
-			ExitCode:     nil,
-			ErrorMessage: nil,
-		}, nil
-	}
+	return &proto.JobStatusResponse{
+		JobStatus:    proto.JobStatus_JobStatus_ENDED,
+		ExitCode:     0,
+		ErrorMessage: "not implemented",
+	}, nil
 }
 
 func (jSS *jobServiceServer) Tail(req *proto.JobIdRequest, stream grpc.ServerStreamingServer[proto.JobOutputResponse]) error {
@@ -117,7 +100,7 @@ func (jSS *jobServiceServer) Tail(req *proto.JobIdRequest, stream grpc.ServerStr
 	}
 
 	stream.Send(&proto.JobOutputResponse{
-		Message: []byte("output"),
+		Message: []byte("not implemented"),
 	})
 
 	return nil
