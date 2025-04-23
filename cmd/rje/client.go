@@ -71,8 +71,7 @@ func start(args []string) error {
 	}
 
 	defer func() {
-		err = grpcClient.Close()
-		if err != nil {
+		if err := grpcClient.Close(); err != nil {
 			log.Printf("Unable to close gRPC channel %v\n", err)
 		}
 	}()
@@ -110,8 +109,7 @@ func stop(args []string) error {
 	}
 
 	defer func() {
-		err = grpcClient.Close()
-		if err != nil {
+		if err = grpcClient.Close(); err != nil {
 			log.Printf("Unable to close gRPC channel %v", err)
 		}
 	}()
@@ -149,8 +147,7 @@ func status(args []string) error {
 	}
 
 	defer func() {
-		err = grpcClient.Close()
-		if err != nil {
+		if err = grpcClient.Close(); err != nil {
 			log.Printf("Unable to close gRPC channel %v", err)
 		}
 	}()
@@ -196,8 +193,7 @@ func tail(args []string) error {
 	}
 
 	defer func() {
-		err = grpcClient.Close()
-		if err != nil {
+		if err = grpcClient.Close(); err != nil {
 			log.Printf("Unable to close gRPC channel %v", err)
 		}
 	}()
@@ -205,7 +201,7 @@ func tail(args []string) error {
 	// Create the gRPC client
 	jobServiceClient := proto.NewJobsServiceClient(grpcClient)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Create account
@@ -215,15 +211,14 @@ func tail(args []string) error {
 	}
 
 	for {
-		jobTailResponse, err := jobResponse.Recv()
-		if err != nil {
+		if jobTailResponse, err := jobResponse.Recv(); err != nil {
 			if err == io.EOF {
 				return nil
 			} else {
 				return err
 			}
+		} else {
+			fmt.Println(jobTailResponse)
 		}
-
-		fmt.Println(string(jobTailResponse.Message))
 	}
 }

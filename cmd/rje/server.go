@@ -17,7 +17,7 @@ import (
 
 func createGrpcServer(port int, certFile string, keyFile string, certAuthorityFile string) (*grpc.Server, net.Listener, error) {
 	// Create a listener that listens to localhost
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -49,7 +49,7 @@ func serve(args []string) error {
 		listener.Close()
 	}()
 
-	log.Printf("Starting up on %s", fmt.Sprintf("0.0.0.0:%d", flags.port))
+	log.Printf("Starting up on %s", listener.Addr().String())
 	return grpcServer.Serve(listener)
 }
 
@@ -63,11 +63,7 @@ func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartReque
 		return nil, errors.New("empty request")
 	}
 
-	return &proto.JobStartResponse{
-		JobId:        "",
-		Status:       proto.JobStartStatus_JobStartStatus_COMMAND_NOT_FOUND,
-		ErrorMessage: "not implemented",
-	}, nil
+	return jSS.UnimplementedJobsServiceServer.Start(ctx, req)
 }
 
 func (jSS *jobServiceServer) Stop(ctx context.Context, req *proto.JobIdRequest) (*proto.JobStopResponse, error) {
@@ -75,11 +71,7 @@ func (jSS *jobServiceServer) Stop(ctx context.Context, req *proto.JobIdRequest) 
 		return nil, errors.New("empty request")
 	}
 
-	return &proto.JobStopResponse{
-		ForceEnded:   false,
-		ExitCode:     0,
-		ErrorMessage: "not implemented",
-	}, nil
+	return jSS.UnimplementedJobsServiceServer.Stop(ctx, req)
 }
 
 func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest) (*proto.JobStatusResponse, error) {
@@ -87,11 +79,7 @@ func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest
 		return nil, errors.New("empty request")
 	}
 
-	return &proto.JobStatusResponse{
-		JobStatus:    proto.JobStatus_JobStatus_ENDED,
-		ExitCode:     0,
-		ErrorMessage: "not implemented",
-	}, nil
+	return jSS.UnimplementedJobsServiceServer.Status(ctx, req)
 }
 
 func (jSS *jobServiceServer) Tail(req *proto.JobIdRequest, stream grpc.ServerStreamingServer[proto.JobOutputResponse]) error {
@@ -99,9 +87,5 @@ func (jSS *jobServiceServer) Tail(req *proto.JobIdRequest, stream grpc.ServerStr
 		return errors.New("empty request")
 	}
 
-	stream.Send(&proto.JobOutputResponse{
-		Message: []byte("not implemented"),
-	})
-
-	return nil
+	return jSS.UnimplementedJobsServiceServer.Tail(req, stream)
 }
