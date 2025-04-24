@@ -22,7 +22,7 @@ func createGrpcServer(port int, certFile []byte, keyFile []byte, certAuthorityFi
 		return nil, nil, err
 	}
 
-	tlsCredentials, err := loadCerts(certFile, keyFile, certAuthorityFile)
+	tlsCredentials, _, err := loadCerts(certFile, keyFile, certAuthorityFile)
 	if err != nil {
 		return nil, nil, err
 	}

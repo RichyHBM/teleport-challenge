@@ -53,7 +53,7 @@ func start(args []string) error {
 		return err
 	}
 
-	cert, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
+	cert, username, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func start(args []string) error {
 	defer cancel()
 
 	// Create account
-	jobResponse, err := jobServiceClient.Start(ctx, &proto.JobStartRequest{Command: remoteJob})
+	jobResponse, err := jobServiceClient.Start(ctx, &proto.JobStartRequest{Command: remoteJob, Username: username})
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func stop(args []string) error {
 		return err
 	}
 
-	cert, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
+	cert, username, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func stop(args []string) error {
 	defer cancel()
 
 	// Create account
-	jobResponse, err := jobServiceClient.Stop(ctx, &proto.JobIdRequest{JobId: flags.jobId})
+	jobResponse, err := jobServiceClient.Stop(ctx, &proto.JobIdRequest{JobId: flags.jobId, Username: username})
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func status(args []string) error {
 		return err
 	}
 
-	cert, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
+	cert, username, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func status(args []string) error {
 	defer cancel()
 
 	// Create account
-	jobResponse, err := jobServiceClient.Status(ctx, &proto.JobIdRequest{JobId: flags.jobId})
+	jobResponse, err := jobServiceClient.Status(ctx, &proto.JobIdRequest{JobId: flags.jobId, Username: username})
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func tail(args []string) error {
 		return err
 	}
 
-	cert, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
+	cert, username, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func tail(args []string) error {
 	defer cancel()
 
 	// Create account
-	jobResponse, err := jobServiceClient.Tail(ctx, &proto.JobIdRequest{JobId: flags.jobId})
+	jobResponse, err := jobServiceClient.Tail(ctx, &proto.JobIdRequest{JobId: flags.jobId, Username: username})
 	if err != nil {
 		return err
 	}

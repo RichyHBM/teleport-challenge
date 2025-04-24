@@ -127,6 +127,7 @@ func (JobStatus) EnumDescriptor() ([]byte, []int) {
 type JobStartRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Command       []string               `protobuf:"bytes,1,rep,name=command,proto3" json:"command,omitempty"`
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -166,6 +167,13 @@ func (x *JobStartRequest) GetCommand() []string {
 		return x.Command
 	}
 	return nil
+}
+
+func (x *JobStartRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
 }
 
 type JobStartResponse struct {
@@ -232,6 +240,7 @@ func (x *JobStartResponse) GetErrorMessage() string {
 type JobIdRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	JobId         string                 `protobuf:"bytes,1,opt,name=jobId,proto3" json:"jobId,omitempty"`
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -269,6 +278,13 @@ func (*JobIdRequest) Descriptor() ([]byte, []int) {
 func (x *JobIdRequest) GetJobId() string {
 	if x != nil {
 		return x.JobId
+	}
+	return ""
+}
+
+func (x *JobIdRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
 	}
 	return ""
 }
@@ -443,15 +459,17 @@ var File_api_proto protoreflect.FileDescriptor
 
 const file_api_proto_rawDesc = "" +
 	"\n" +
-	"\tapi.proto\"+\n" +
+	"\tapi.proto\"G\n" +
 	"\x0fJobStartRequest\x12\x18\n" +
-	"\acommand\x18\x01 \x03(\tR\acommand\"u\n" +
+	"\acommand\x18\x01 \x03(\tR\acommand\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\"u\n" +
 	"\x10JobStartResponse\x12\x14\n" +
 	"\x05jobId\x18\x01 \x01(\tR\x05jobId\x12'\n" +
 	"\x06Status\x18\x02 \x01(\x0e2\x0f.JobStartStatusR\x06Status\x12\"\n" +
-	"\ferrorMessage\x18\x03 \x01(\tR\ferrorMessage\"$\n" +
+	"\ferrorMessage\x18\x03 \x01(\tR\ferrorMessage\"@\n" +
 	"\fJobIdRequest\x12\x14\n" +
-	"\x05jobId\x18\x01 \x01(\tR\x05jobId\"q\n" +
+	"\x05jobId\x18\x01 \x01(\tR\x05jobId\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\"q\n" +
 	"\x0fJobStopResponse\x12\x1e\n" +
 	"\n" +
 	"forceEnded\x18\x01 \x01(\bR\n" +

@@ -13,6 +13,7 @@ service JobsService {
 // Start Messages
 message JobStartRequest {
   repeated string command = 1;
+  string username = 2;
 }
 
 enum JobStartStatus {
@@ -31,6 +32,7 @@ message JobStartResponse {
 // Stop/Query/Tail Request Message
 message JobIdRequest {
   string jobId = 1;
+  string username = 2;
 }
 
 // Stop Response
