@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"testing"
 
+	"github.com/spf13/pflag"
 	"google.golang.org/grpc/codes"
 	gstatus "google.golang.org/grpc/status"
 )
@@ -128,7 +130,7 @@ func TestClientArgs(t *testing.T) {
 		t.Error("no remote command should fail")
 	}
 
-	if _, _, err := splitFlagsAndRemoteCommand([]string{"start", "-h"}); err == nil {
+	if _, _, err := splitFlagsAndRemoteCommand([]string{"start", "-h"}); err == nil || !errors.Is(pflag.ErrHelp, err) {
 		t.Error("help argument should be valid")
 	}
 

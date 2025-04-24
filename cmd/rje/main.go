@@ -1,8 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+
+	"github.com/spf13/pflag"
 )
 
 var helpMessage = `rje - Remote Job Executor
@@ -41,10 +44,9 @@ func main() {
 	if function, hasKey := commandFunctions[subcommand]; hasKey {
 		if err := function(os.Args[1:]); err != nil {
 			// if help arg passed in, dont print error
-			if err.Error() != "pflag: help requested" {
+			if !errors.Is(pflag.ErrHelp, err) {
 				fmt.Println(err.Error())
 			}
-
 		}
 	} else {
 		fmt.Println("subcommand not found, run program without arguments to see usage")

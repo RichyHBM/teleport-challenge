@@ -46,7 +46,7 @@ Both client and server will expect the certificate files content to be passed in
 set as such:
 
 ```
-program serve --ca-file "$(cat certs/CA.pem)" --key-file "$(cat certs/server.key)" --cert-file "$(cat certs/server.crt)"
+program <subcommand> --ca-file "$(cat certs/CA.pem)" --key-file "$(cat certs/server.key)" --cert-file "$(cat certs/server.crt)" <other args>
 ```
 
 #### Client

@@ -23,21 +23,26 @@ func splitFlagsAndRemoteCommand(args []string) (StartArgs, []string, error) {
 	// Figure out where the program arguments end in the args array
 	argumentsEndIndex := slices.Index(args, "--")
 
-	if argumentsEndIndex < 0 || len(args) < argumentsEndIndex {
+	if len(args) < argumentsEndIndex {
 		return StartArgs{}, nil, errors.New("incorrect amount of arguments found")
 	}
 
 	// Only pass valid args to cliff, isolate job command + args
-	flags, err := cliff.Parse(os.Stderr, args[:argumentsEndIndex], startFlags)
+	endArgs := len(args)
+	if argumentsEndIndex >= 0 {
+		endArgs = argumentsEndIndex
+	}
+
+	flags, err := cliff.Parse(os.Stderr, args[:endArgs], startFlags)
 	if err != nil {
 		return StartArgs{}, nil, err
 	}
 
-	remoteJob := args[argumentsEndIndex+1:]
-	if len(remoteJob) == 0 {
+	if argumentsEndIndex < 0 || len(args[argumentsEndIndex+1:]) == 0 {
 		return StartArgs{}, nil, errors.New("no remote job command given")
 	}
-	return flags, remoteJob, nil
+
+	return flags, args[argumentsEndIndex+1:], nil
 }
 
 // Start is more complex than other methods as we need to
