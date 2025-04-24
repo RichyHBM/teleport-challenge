@@ -180,7 +180,6 @@ type JobStartResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	JobId         string                 `protobuf:"bytes,1,opt,name=jobId,proto3" json:"jobId,omitempty"`
 	Status        JobStartStatus         `protobuf:"varint,2,opt,name=Status,proto3,enum=JobStartStatus" json:"Status,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -227,13 +226,6 @@ func (x *JobStartResponse) GetStatus() JobStartStatus {
 		return x.Status
 	}
 	return JobStartStatus_JobStartStatus_RUNNING
-}
-
-func (x *JobStartResponse) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
 }
 
 // Stop/Query/Tail Request Message
@@ -294,7 +286,6 @@ type JobStopResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ForceEnded    bool                   `protobuf:"varint,1,opt,name=forceEnded,proto3" json:"forceEnded,omitempty"`
 	ExitCode      int32                  `protobuf:"varint,2,opt,name=exitCode,proto3" json:"exitCode,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -343,18 +334,10 @@ func (x *JobStopResponse) GetExitCode() int32 {
 	return 0
 }
 
-func (x *JobStopResponse) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
 type JobStatusResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	JobStatus     JobStatus              `protobuf:"varint,1,opt,name=jobStatus,proto3,enum=JobStatus" json:"jobStatus,omitempty"`
 	ExitCode      int32                  `protobuf:"varint,2,opt,name=exitCode,proto3" json:"exitCode,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -401,13 +384,6 @@ func (x *JobStatusResponse) GetExitCode() int32 {
 		return x.ExitCode
 	}
 	return 0
-}
-
-func (x *JobStatusResponse) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
 }
 
 // Tail Message - Stream
@@ -462,25 +438,22 @@ const file_api_proto_rawDesc = "" +
 	"\tapi.proto\"G\n" +
 	"\x0fJobStartRequest\x12\x18\n" +
 	"\acommand\x18\x01 \x03(\tR\acommand\x12\x1a\n" +
-	"\busername\x18\x02 \x01(\tR\busername\"u\n" +
+	"\busername\x18\x02 \x01(\tR\busername\"Q\n" +
 	"\x10JobStartResponse\x12\x14\n" +
 	"\x05jobId\x18\x01 \x01(\tR\x05jobId\x12'\n" +
-	"\x06Status\x18\x02 \x01(\x0e2\x0f.JobStartStatusR\x06Status\x12\"\n" +
-	"\ferrorMessage\x18\x03 \x01(\tR\ferrorMessage\"@\n" +
+	"\x06Status\x18\x02 \x01(\x0e2\x0f.JobStartStatusR\x06Status\"@\n" +
 	"\fJobIdRequest\x12\x14\n" +
 	"\x05jobId\x18\x01 \x01(\tR\x05jobId\x12\x1a\n" +
-	"\busername\x18\x02 \x01(\tR\busername\"q\n" +
+	"\busername\x18\x02 \x01(\tR\busername\"M\n" +
 	"\x0fJobStopResponse\x12\x1e\n" +
 	"\n" +
 	"forceEnded\x18\x01 \x01(\bR\n" +
 	"forceEnded\x12\x1a\n" +
-	"\bexitCode\x18\x02 \x01(\x05R\bexitCode\x12\"\n" +
-	"\ferrorMessage\x18\x03 \x01(\tR\ferrorMessage\"}\n" +
+	"\bexitCode\x18\x02 \x01(\x05R\bexitCode\"Y\n" +
 	"\x11JobStatusResponse\x12(\n" +
 	"\tjobStatus\x18\x01 \x01(\x0e2\n" +
 	".JobStatusR\tjobStatus\x12\x1a\n" +
-	"\bexitCode\x18\x02 \x01(\x05R\bexitCode\x12\"\n" +
-	"\ferrorMessage\x18\x03 \x01(\tR\ferrorMessage\"-\n" +
+	"\bexitCode\x18\x02 \x01(\x05R\bexitCode\"-\n" +
 	"\x11JobOutputResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\fR\amessage*\x9f\x01\n" +
 	"\x0eJobStartStatus\x12\x1a\n" +
