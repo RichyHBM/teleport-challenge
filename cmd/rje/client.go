@@ -7,10 +7,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/orsinium-labs/cliff"
-	"github.com/richyhbm/teleport-challenge/certs"
 	"github.com/richyhbm/teleport-challenge/proto"
 	"google.golang.org/grpc"
 )
@@ -21,21 +21,9 @@ func splitFlagsAndRemoteCommand(args []string) (StartArgs, []string, error) {
 	}
 
 	// Figure out where the program arguments end in the args array
-	argumentsEndIndex := 1
-	foundSeparator := false
+	argumentsEndIndex := slices.Index(args, "--")
 
-	for i := argumentsEndIndex; i < len(args); i++ {
-		arg := args[i]
-
-		if arg == "-h" || arg == "--help" {
-			argumentsEndIndex++
-		} else if arg == "--" {
-			argumentsEndIndex = i
-			foundSeparator = true
-		}
-	}
-
-	if len(args) < argumentsEndIndex || !foundSeparator {
+	if argumentsEndIndex < 0 || len(args) < argumentsEndIndex {
 		return StartArgs{}, nil, errors.New("incorrect amount of arguments found")
 	}
 
@@ -60,7 +48,7 @@ func start(args []string) error {
 		return err
 	}
 
-	cert, err := certs.LoadCerts(flags.certFile, flags.keyFile, flags.caFile, true)
+	cert, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
 		return err
 	}
@@ -98,7 +86,7 @@ func stop(args []string) error {
 		return err
 	}
 
-	cert, err := certs.LoadCerts(flags.certFile, flags.keyFile, flags.caFile, true)
+	cert, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
 		return err
 	}
@@ -136,7 +124,7 @@ func status(args []string) error {
 		return err
 	}
 
-	cert, err := certs.LoadCerts(flags.certFile, flags.keyFile, flags.caFile, true)
+	cert, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
 		return err
 	}
@@ -182,7 +170,7 @@ func tail(args []string) error {
 		return err
 	}
 
-	cert, err := certs.LoadCerts(flags.certFile, flags.keyFile, flags.caFile, true)
+	cert, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
 		return err
 	}

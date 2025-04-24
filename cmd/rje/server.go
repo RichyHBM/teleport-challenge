@@ -7,22 +7,22 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"github.com/orsinium-labs/cliff"
-	"github.com/richyhbm/teleport-challenge/certs"
 	"github.com/richyhbm/teleport-challenge/pkg/rje"
 	"github.com/richyhbm/teleport-challenge/proto"
 	"google.golang.org/grpc"
 )
 
-func createGrpcServer(port int, certFile string, keyFile string, certAuthorityFile string) (*grpc.Server, net.Listener, error) {
+func createGrpcServer(port int, certFile []byte, keyFile []byte, certAuthorityFile []byte) (*grpc.Server, net.Listener, error) {
 	// Create a listener that listens to localhost
 	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	tlsCredentials, err := certs.LoadCerts(certFile, keyFile, certAuthorityFile, false)
+	tlsCredentials, err := loadCerts(certFile, keyFile, certAuthorityFile)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -39,14 +39,18 @@ func serve(args []string) error {
 		return err
 	}
 
-	grpcServer, listener, err := createGrpcServer(flags.port, flags.certFile, flags.keyFile, flags.caFile)
+	grpcServer, listener, err := createGrpcServer(flags.port, []byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
 		return err
 	}
 
 	defer func() {
+		timer := time.AfterFunc(time.Second*10, func() {
+			fmt.Println("Server couldn't stop gracefully in time. Doing force stop.")
+			grpcServer.Stop()
+		})
+		defer timer.Stop()
 		grpcServer.GracefulStop()
-		listener.Close()
 	}()
 
 	log.Printf("Starting up on %s", listener.Addr().String())

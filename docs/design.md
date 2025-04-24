@@ -40,7 +40,14 @@ are as follows:
 ### CLI UX
 
 The application will be a single binary application using subcommands to run the different functionality
-Depending on whether this is ran as the server/api or the client, the behavior will change as follows:
+Depending on whether this is ran as the server/api or the client, the behavior will change as follows.
+
+Both client and server will expect the certificate files content to be passed in to the cli, these can be
+set as such:
+
+```
+program serve --ca-file "$(cat certs/CA.pem)" --key-file "$(cat certs/server.key)" --cert-file "$(cat certs/server.crt)"
+```
 
 #### Client
 

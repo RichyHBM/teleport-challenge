@@ -1,43 +1,53 @@
-package certs
+package main
 
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"embed"
 	"errors"
+	"os"
 
 	"google.golang.org/grpc/credentials"
 )
 
-//go:embed *
-var CertsFS embed.FS
+type certificateFileContents struct {
+	certificateFileContents   []byte
+	keyFileContents           []byte
+	certAuthorityFileContents []byte
+}
 
-func LoadCerts(certFile string, keyFile string, certAuthorityFile string, asClient bool) (credentials.TransportCredentials, error) {
-	// Load files from embed
-	certPEMBlock, err := CertsFS.ReadFile(certFile)
+func readCertsFromFiles(certFile string, keyFile string, certAuthorityFile string) (*certificateFileContents, error) {
+	certFileContent, err := os.ReadFile(certFile)
 	if err != nil {
 		return nil, err
 	}
 
-	keyPEMBlock, err := CertsFS.ReadFile(keyFile)
+	keyFileContent, err := os.ReadFile(keyFile)
 	if err != nil {
 		return nil, err
 	}
 
-	trustedCert, err := CertsFS.ReadFile(certAuthorityFile)
+	certAuthorityFileContent, err := os.ReadFile(certAuthorityFile)
 	if err != nil {
 		return nil, err
 	}
 
+	return &certificateFileContents{
+		certificateFileContents: certFileContent,
+		keyFileContents: keyFileContent,
+		certAuthorityFileContents: certAuthorityFileContent,
+	}, nil
+}
+
+func loadCerts(certFile []byte, keyFile []byte, certAuthorityFile []byte) (credentials.TransportCredentials, error) {
 	// Load server certificates
-	cert, err := tls.X509KeyPair(certPEMBlock, keyPEMBlock)
+	cert, err := tls.X509KeyPair(certFile, keyFile)
 	if err != nil {
 		return nil, err
 	}
 
 	// Put the CA certificate into the certificate pool
 	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM(trustedCert) {
+	if !certPool.AppendCertsFromPEM(certAuthorityFile) {
 		return nil, errors.New("Failed to append trusted certificate to certificate pool")
 	}
 
