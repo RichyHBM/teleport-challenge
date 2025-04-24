@@ -1,12 +1,11 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/orsinium-labs/cliff"
@@ -34,6 +33,12 @@ func createGrpcServer(port int, certFile []byte, keyFile []byte, certAuthorityFi
 }
 
 func serve(args []string) error {
+	// TODO: Dont want to mess with user machine for challenge, so just error out if not supported
+	// In prod maybe this could edit the files, but for this only modify for sub-cgroups
+	if err := rje.CheckCgroupSupportsEntries(); err != nil {
+		return err
+	}
+
 	flags, err := cliff.Parse(os.Stderr, args, serveFlags)
 	if err != nil {
 		return err
@@ -53,9 +58,27 @@ func serve(args []string) error {
 		grpcServer.GracefulStop()
 	}()
 
+	parentCGroup, err := rje.SetupCGroupFromName("remote-job-challenge", false)
+	if err != nil {
+		return err
+	} else {
+		// Listen for sig interrupts and properly cleanup
+		go func() {
+			interruptChan := make(chan os.Signal, 1)
+			signal.Notify(interruptChan, os.Interrupt)
+			<-interruptChan
+			cleanup(grpcServer, parentCGroup)
+		}()
+	}
+	defer parentCGroup.Close()
+
 	log.Printf("Starting up on %s", listener.Addr().String())
 	return grpcServer.Serve(listener)
 }
 
-
+func cleanup(grpcServer *grpc.Server, parentCGroup *rje.CGroup) {
+	grpcServer.Stop()
+	if err := parentCGroup.Close(); err != nil {
+		fmt.Println(err)
+	}
 }
