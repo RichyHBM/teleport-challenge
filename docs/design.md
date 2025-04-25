@@ -40,7 +40,14 @@ are as follows:
 ### CLI UX
 
 The application will be a single binary application using subcommands to run the different functionality
-Depending on whether this is ran as the server/api or the client, the behavior will change as follows:
+Depending on whether this is ran as the server/api or the client, the behavior will change as follows.
+
+Both client and server will expect the certificate files content to be passed in to the cli, these can be
+set as such:
+
+```
+program <subcommand> --ca-file "$(cat certs/CA.pem)" --key-file "$(cat certs/server.key)" --cert-file "$(cat certs/server.crt)" <other args>
+```
 
 #### Client
 
@@ -49,7 +56,7 @@ to identify the server endpoint:
 
 - Start
    ```
-   program start --server=<server endpoint> <command --arguments>
+   program start --server=<server endpoint> -- <command --arguments>
    ```
 
    This will then return a job ID that will be used in the remaining commands to reference this job,
