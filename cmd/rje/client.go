@@ -47,20 +47,20 @@ func splitFlagsAndRemoteCommand(args []string) (StartArgs, []string, error) {
 
 // Start is more complex than other methods as we need to
 // isolate program arguments from job command/arguments
-func start(args []string) error {
+func start(args []string) (string, error) {
 	flags, remoteJob, err := splitFlagsAndRemoteCommand(args)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	cert, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	grpcClient, err := grpc.NewClient(flags.server, grpc.WithTransportCredentials(cert))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer func() {
@@ -78,27 +78,26 @@ func start(args []string) error {
 	// Create account
 	jobResponse, err := jobServiceClient.Start(ctx, &proto.JobStartRequest{Command: remoteJob})
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	fmt.Printf("Job created: %s\n", jobResponse.JobId)
-	return nil
+	return jobResponse.JobId, nil
 }
 
-func stop(args []string) error {
+func stop(args []string) (string, error) {
 	flags, err := cliff.Parse(os.Stderr, args, stopStatusTailFlags)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	cert, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	grpcClient, err := grpc.NewClient(flags.server, grpc.WithTransportCredentials(cert))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer func() {
@@ -116,27 +115,26 @@ func stop(args []string) error {
 	// Create account
 	jobResponse, err := jobServiceClient.Stop(ctx, &proto.JobIdRequest{JobId: flags.jobId})
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	fmt.Printf("Job ended with: %d, was force ended: %t\n", jobResponse.ExitCode, jobResponse.ForceEnded)
-	return nil
+	return fmt.Sprintf("Job ended with: %d, was force ended: %t\n", jobResponse.ExitCode, jobResponse.ForceEnded), nil
 }
 
-func status(args []string) error {
+func status(args []string) (string, error) {
 	flags, err := cliff.Parse(os.Stderr, args, stopStatusTailFlags)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	cert, err := loadCerts([]byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	grpcClient, err := grpc.NewClient(flags.server, grpc.WithTransportCredentials(cert))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer func() {
@@ -154,19 +152,19 @@ func status(args []string) error {
 	// Create account
 	jobResponse, err := jobServiceClient.Status(ctx, &proto.JobIdRequest{JobId: flags.jobId})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	switch jobResponse.JobStatus {
 	case proto.JobStatus_JobStatus_RUNNING:
-		fmt.Println("Job running")
+		return fmt.Sprintf("Job running"), nil
 	case proto.JobStatus_JobStatus_ENDED:
-		fmt.Printf("Job ended with code with code: %d\n", jobResponse.ExitCode)
+		return fmt.Sprintf("Job ended with code with code: %d\n", jobResponse.ExitCode), nil
 	case proto.JobStatus_JobStatus_FORCE_ENDED:
-		fmt.Printf("Job force ended with code: %d\n", jobResponse.ExitCode)
+		return fmt.Sprintf("Job force ended with code: %d\n", jobResponse.ExitCode), nil
 	}
 
-	return nil
+	return "", nil
 }
 
 func tail(args []string) error {

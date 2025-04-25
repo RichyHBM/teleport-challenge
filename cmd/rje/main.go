@@ -30,11 +30,29 @@ func main() {
 		return
 	}
 
+	// Wrapper to print the output of the method, and return any error
+	printWrapper := func(funcName func([]string) (string, error)) func([]string) error {
+		return func(wrapperArgs []string) error {
+			outputString, err := funcName(wrapperArgs)
+			if err != nil {
+				return err
+			}
+			fmt.Println(outputString)
+			return nil
+		}
+	}
+
+	// Want start to return just the job id, but print more info
+	startWrapper := func(wrapperArgs []string) (string, error) {
+		str, err := start(wrapperArgs)
+		return fmt.Sprintf("Job created: %s\n", str), err
+	}
+
 	// Custom logic for managing subcommands
 	commandFunctions := map[string]func([]string) error{
-		"start":  start,
-		"stop":   stop,
-		"status": status,
+		"start":  printWrapper(startWrapper),
+		"stop":   printWrapper(stop),
+		"status": printWrapper(status),
 		"tail":   tail,
 		"serve":  serve,
 	}
