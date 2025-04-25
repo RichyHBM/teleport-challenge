@@ -11,7 +11,7 @@ var (
 	ErrUnAuth                     = grpc_status.Error(codes.PermissionDenied, "unauthorized")
 	authData  map[string][]string = map[string][]string{
 		"root":         {"*"},
-		"valid_client": {"echo", "cat", "ls"},
+		"valid_client": {"echo", "cat", "ls", "tail", "sleep"},
 	}
 )
 
