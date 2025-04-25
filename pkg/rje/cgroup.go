@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -34,7 +35,7 @@ type partition struct {
 // Want to check controllers and subtree_controls for cpu, mem, io capabilities
 // https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html
 func CheckCgroupSupportsEntries() error {
-	if controllers, err := os.ReadFile(CGROUP_PATH + CONTROLLERS_FILE); err != nil {
+	if controllers, err := os.ReadFile(filepath.Join(CGROUP_PATH, CONTROLLERS_FILE)); err != nil {
 		return err
 	} else {
 		controllersStr := string(controllers)
@@ -43,7 +44,7 @@ func CheckCgroupSupportsEntries() error {
 		}
 	}
 
-	if subtree, err := os.ReadFile(CGROUP_PATH + SUBTREE_CONTROL_FILE); err != nil {
+	if subtree, err := os.ReadFile(filepath.Join(CGROUP_PATH, SUBTREE_CONTROL_FILE)); err != nil {
 		return err
 	} else {
 		subtreeStr := string(subtree)
@@ -56,7 +57,7 @@ func CheckCgroupSupportsEntries() error {
 }
 
 func SetupCGroupFromName(cgroupName string, limitResources bool) (*CGroup, error) {
-	scopedCgroupPath := CGROUP_PATH + string(os.PathSeparator) + cgroupName
+	scopedCgroupPath := filepath.Join(CGROUP_PATH, cgroupName)
 	return setupCGroup(scopedCgroupPath, limitResources)
 }
 
@@ -75,7 +76,7 @@ func setupCGroup(cgroupPath string, limitResources bool) (*CGroup, error) {
 	}
 
 	// Make sure children can control cpu/io/mem
-	if err := os.WriteFile(cgroupPath+SUBTREE_CONTROL_FILE, []byte("+cpu +io +memory"), os.ModePerm); err != nil {
+	if err := os.WriteFile(filepath.Join(cgroupPath, SUBTREE_CONTROL_FILE), []byte("+cpu +io +memory"), os.ModePerm); err != nil {
 		cgroup.Close()
 		return nil, err
 	}
@@ -85,13 +86,13 @@ func setupCGroup(cgroupPath string, limitResources bool) (*CGroup, error) {
 	}
 
 	// Limit CPU
-	if err := os.WriteFile(cgroupPath+CPU_MAX_FILE, []byte(CPU_LIMITS), os.ModePerm); err != nil {
+	if err := os.WriteFile(filepath.Join(cgroupPath, CPU_MAX_FILE), []byte(CPU_LIMITS), os.ModePerm); err != nil {
 		cgroup.Close()
 		return nil, err
 	}
 
 	// Limit Memory
-	if err := os.WriteFile(cgroupPath+MEM_MAX_FILE, []byte(MEM_LIMITS), os.ModePerm); err != nil {
+	if err := os.WriteFile(filepath.Join(cgroupPath, MEM_MAX_FILE), []byte(MEM_LIMITS), os.ModePerm); err != nil {
 		cgroup.Close()
 		return nil, err
 	}
@@ -115,7 +116,7 @@ func setupCGroup(cgroupPath string, limitResources bool) (*CGroup, error) {
 			*	Failed to add io.max line: "8:1 rbps=1048576000 wbps=10485760 riops=1000000 wiops=1000000", skipping partition
 			*	Failed to add io.max line: "8:2 rbps=1048576000 wbps=10485760 riops=1000000 wiops=1000000", skipping partition
 			 */
-			if err := os.WriteFile(cgroupPath+IO_MAX_FILE, []byte(majorMinorLimit), os.ModePerm); err != nil {
+			if err := os.WriteFile(filepath.Join(cgroupPath, IO_MAX_FILE), []byte(majorMinorLimit), os.ModePerm); err != nil {
 				fmt.Printf("Failed to add io.max line: \"%s\", skipping partition\n", majorMinorLimit)
 			}
 		}

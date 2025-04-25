@@ -9,7 +9,7 @@ import (
 func TestCGroups(t *testing.T) {
 	// If the OS doesn't support the cgroups we want, ignore the tests
 	if err := CheckCgroupSupportsEntries(); err != nil {
-		return
+		t.SkipNow()
 	}
 
 	if cgroup, err := SetupCGroupFromName("remote-job-challenge-test", false); err != nil {
