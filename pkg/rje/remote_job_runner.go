@@ -3,6 +3,7 @@ package rje
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"sync"
 	"time"
@@ -18,16 +19,24 @@ type RemoteJobRunner struct {
 	mutex         sync.RWMutex
 }
 
-func (rjr *RemoteJobRunner) Start(command []string) (string, error) {
+func (rjr *RemoteJobRunner) Start(command []string) (string, bool, bool, error) {
+	if rjr.availableJobs == nil {
+		rjr.mutex.Lock()
+		if rjr.availableJobs == nil {
+			rjr.availableJobs = make(map[string]*RemoteJob)
+		}
+		rjr.mutex.Unlock()
+	}
+
 	if remoteJob, err := NewRemoteJob(); err != nil {
-		return "", err
+		return "", false, false, err
 	} else {
 		uuidString := remoteJob.uuid.String()
 
 		rjr.mutex.RLock()
 		if _, exists := rjr.availableJobs[uuidString]; exists {
 			rjr.mutex.RUnlock()
-			return "", ErrDuplicateUUID
+			return "", false, false, ErrDuplicateUUID
 		}
 		rjr.mutex.RUnlock()
 
@@ -35,14 +44,15 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, error) {
 		// Future features could store output in different streams and allow user to request specific stream
 		cmd.Stdout = remoteJob.outputStream
 		cmd.Stderr = remoteJob.outputStream
-		// staarting it up in a goroutine means ProcessState will populate if it ends
-		go cmd.Run()
+
+		// starting it up in a goroutine means ProcessState will populate if it ends
+		cmd.Start()
 
 		if cmd.Err != nil {
 			if cmd.Process != nil {
 				cmd.Process.Kill()
 			}
-			return "", cmd.Err
+			return "", false, false, cmd.Err
 		}
 
 		remoteJob.command = cmd
@@ -51,11 +61,22 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, error) {
 		defer rjr.mutex.Unlock()
 
 		rjr.availableJobs[uuidString] = remoteJob
-		return remoteJob.uuid.String(), nil
+
+		foundExec := cmd.Err == nil
+		isRunning := cmd.ProcessState != nil
+		return remoteJob.uuid.String(), foundExec, isRunning, nil
 	}
 }
 
 func (rjr *RemoteJobRunner) Stop(uuid string) (int, bool, error) {
+	if rjr.availableJobs == nil {
+		rjr.mutex.Lock()
+		if rjr.availableJobs == nil {
+			rjr.availableJobs = make(map[string]*RemoteJob)
+		}
+		rjr.mutex.Unlock()
+	}
+
 	rjr.mutex.RLock()
 	defer rjr.mutex.RUnlock()
 	job, hasJob := rjr.availableJobs[uuid]
@@ -72,29 +93,49 @@ func (rjr *RemoteJobRunner) Stop(uuid string) (int, bool, error) {
 	})
 	defer timer.Stop()
 
-	err := job.command.Wait()
-	if err != nil {
-		return -1, false, err
+	// Wait if the process is still running
+	if job.command.ProcessState == nil {
+		err := job.command.Wait()
+		if err != nil {
+			if _, ok := err.(*exec.ExitError); !ok {
+				return -1, false, err
+			}
+		}
 	}
 
 	job.running = false
 	return job.command.ProcessState.ExitCode(), job.command.ProcessState.Exited(), nil
 }
 
-func (rjr *RemoteJobRunner) Status(uuid string) (bool, error) {
+func (rjr *RemoteJobRunner) Status(uuid string) (*os.ProcessState, error) {
+	if rjr.availableJobs == nil {
+		rjr.mutex.Lock()
+		if rjr.availableJobs == nil {
+			rjr.availableJobs = make(map[string]*RemoteJob)
+		}
+		rjr.mutex.Unlock()
+	}
+
 	rjr.mutex.RLock()
 	defer rjr.mutex.RUnlock()
 	job, hasJob := rjr.availableJobs[uuid]
 
 	if !hasJob {
-		return false, ErrJobNotFound
+		return nil, ErrJobNotFound
 	}
 
-	job.running = job.command.ProcessState == nil
-	return job.running, nil
+	return job.command.ProcessState, nil
 }
 
 func (rjr *RemoteJobRunner) Tail(uuid string) error {
+	if rjr.availableJobs == nil {
+		rjr.mutex.Lock()
+		if rjr.availableJobs == nil {
+			rjr.availableJobs = make(map[string]*RemoteJob)
+		}
+		rjr.mutex.Unlock()
+	}
+
 	rjr.mutex.RLock()
 	defer rjr.mutex.RUnlock()
 	_, hasJob := rjr.availableJobs[uuid]

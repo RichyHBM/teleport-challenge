@@ -19,7 +19,24 @@ func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartReque
 		return nil, errors.New("empty request")
 	}
 
-	return jSS.UnimplementedJobsServiceServer.Start(ctx, req)
+	jobId, foundExec, isRunning, err := jSS.remoteJobRunner.Start(req.Command)
+	if err != nil {
+		return nil, err
+	}
+
+	status := proto.JobStartStatus_JobStartStatus_RUNNING
+	if !isRunning {
+		status = proto.JobStartStatus_JobStartStatus_EXITED_INSTANTLY
+	}
+
+	if !foundExec {
+		status = proto.JobStartStatus_JobStartStatus_COMMAND_NOT_FOUND
+	}
+
+	return &proto.JobStartResponse{
+		JobId:  jobId,
+		Status: status,
+	}, nil
 }
 
 func (jSS *jobServiceServer) Stop(ctx context.Context, req *proto.JobIdRequest) (*proto.JobStopResponse, error) {
@@ -27,7 +44,15 @@ func (jSS *jobServiceServer) Stop(ctx context.Context, req *proto.JobIdRequest) 
 		return nil, errors.New("empty request")
 	}
 
-	return jSS.UnimplementedJobsServiceServer.Stop(ctx, req)
+	exitCode, forceKill, err := jSS.remoteJobRunner.Stop(req.JobId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.JobStopResponse{
+		ExitCode:   int32(exitCode),
+		ForceEnded: forceKill,
+	}, nil
 }
 
 func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest) (*proto.JobStatusResponse, error) {
@@ -35,7 +60,27 @@ func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest
 		return nil, errors.New("empty request")
 	}
 
-	return jSS.UnimplementedJobsServiceServer.Status(ctx, req)
+	processState, err := jSS.remoteJobRunner.Status(req.JobId)
+	if err != nil {
+		return nil, err
+	}
+
+	status := proto.JobStatus_JobStatus_RUNNING
+	exitCode := -1
+
+	if processState != nil {
+		exitCode = processState.ExitCode()
+		if processState.Exited() {
+			status = proto.JobStatus_JobStatus_ENDED
+		} else {
+			status = proto.JobStatus_JobStatus_FORCE_ENDED
+		}
+	}
+
+	return &proto.JobStatusResponse{
+		ExitCode:  int32(exitCode),
+		JobStatus: status,
+	}, nil
 }
 
 func (jSS *jobServiceServer) Tail(req *proto.JobIdRequest, stream grpc.ServerStreamingServer[proto.JobOutputResponse]) error {
