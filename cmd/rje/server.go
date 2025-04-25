@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -10,7 +8,6 @@ import (
 	"time"
 
 	"github.com/orsinium-labs/cliff"
-	"github.com/richyhbm/teleport-challenge/pkg/rje"
 	"github.com/richyhbm/teleport-challenge/proto"
 	"google.golang.org/grpc"
 )
@@ -55,7 +52,4 @@ func serve(args []string) error {
 
 	log.Printf("Starting up on %s", listener.Addr().String())
 	return grpcServer.Serve(listener)
-}
-
-
 }
