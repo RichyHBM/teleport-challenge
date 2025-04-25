@@ -48,15 +48,7 @@ func serve(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	defer func() {
-		timer := time.AfterFunc(time.Second*10, func() {
-			fmt.Println("Server couldn't stop gracefully in time. Doing force stop.")
-			grpcServer.Stop()
-		})
-		defer timer.Stop()
-		grpcServer.GracefulStop()
-	}()
+	defer grpcServer.Stop()
 
 	parentCGroup, err := rje.SetupCGroupFromName("remote-job-challenge", false)
 	if err != nil {
@@ -77,7 +69,13 @@ func serve(args []string) error {
 }
 
 func cleanup(grpcServer *grpc.Server, parentCGroup *rje.CGroup) {
-	grpcServer.Stop()
+	timer := time.AfterFunc(time.Second, func() {
+		fmt.Println("Server couldn't stop gracefully in time. Doing force stop.")
+		grpcServer.Stop()
+	})
+	defer timer.Stop()
+	grpcServer.GracefulStop()
+
 	if err := parentCGroup.Close(); err != nil {
 		fmt.Println(err)
 	}
