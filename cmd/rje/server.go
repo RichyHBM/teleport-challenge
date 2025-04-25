@@ -53,15 +53,16 @@ func serve(args []string) error {
 	parentCGroup, err := rje.SetupCGroupFromName("remote-job-challenge", false)
 	if err != nil {
 		return err
-	} else {
-		// Listen for sig interrupts and properly cleanup
-		go func() {
-			interruptChan := make(chan os.Signal, 1)
-			signal.Notify(interruptChan, os.Interrupt)
-			<-interruptChan
-			cleanup(grpcServer, parentCGroup)
-		}()
 	}
+
+	// Listen for sig interrupts and properly cleanup
+	go func() {
+		interruptChan := make(chan os.Signal, 1)
+		signal.Notify(interruptChan, os.Interrupt)
+		<-interruptChan
+		cleanup(grpcServer, parentCGroup)
+	}()
+
 	defer parentCGroup.Close()
 
 	log.Printf("Starting up on %s", listener.Addr().String())

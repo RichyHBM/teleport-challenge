@@ -35,25 +35,27 @@ type partition struct {
 // Want to check controllers and subtree_controls for cpu, mem, io capabilities
 // https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html
 func CheckCgroupSupportsEntries() error {
-	if controllers, err := os.ReadFile(filepath.Join(CGROUP_PATH, CONTROLLERS_FILE)); err != nil {
+	controllers, err := os.ReadFile(filepath.Join(CGROUP_PATH, CONTROLLERS_FILE))
+	if err != nil {
 		return err
-	} else {
-		controllersStr := string(controllers)
-		if !strings.Contains(controllersStr, "cpu") || !strings.Contains(controllersStr, "io") || !strings.Contains(controllersStr, "memory") {
-			return errors.New("server doesn't support setting correct cgroup controllers")
-		}
 	}
 
-	if subtree, err := os.ReadFile(filepath.Join(CGROUP_PATH, SUBTREE_CONTROL_FILE)); err != nil {
-		return err
-	} else {
-		subtreeStr := string(subtree)
-		if strings.Contains(subtreeStr, "cpu") && strings.Contains(subtreeStr, "memory") && strings.Contains(subtreeStr, "io") {
-			return nil
-		} else {
-			return errors.New("server doesn't support setting correct cgroup subtree controls")
-		}
+	controllersStr := string(controllers)
+	if !strings.Contains(controllersStr, "cpu") || !strings.Contains(controllersStr, "io") || !strings.Contains(controllersStr, "memory") {
+		return errors.New("server doesn't support setting correct cgroup controllers")
 	}
+
+	subtree, err := os.ReadFile(filepath.Join(CGROUP_PATH, SUBTREE_CONTROL_FILE))
+	if err != nil {
+		return err
+	}
+
+	subtreeStr := string(subtree)
+	if strings.Contains(subtreeStr, "cpu") && strings.Contains(subtreeStr, "memory") && strings.Contains(subtreeStr, "io") {
+		return nil
+	}
+
+	return errors.New("server doesn't support setting correct cgroup subtree controls")
 }
 
 func SetupCGroupFromName(cgroupName string, limitResources bool) (*CGroup, error) {
@@ -98,27 +100,28 @@ func setupCGroup(cgroupPath string, limitResources bool) (*CGroup, error) {
 	}
 
 	// Limit IO on all partitions
-	if partitions, err := readPartitions(); err != nil {
+	partitions, err := readPartitions()
+	if err != nil {
 		cgroup.Close()
 		return nil, err
-	} else {
-		for _, partition := range partitions {
-			majorMinorLimit := fmt.Sprintf(IO_LIMITS, partition.major, partition.minor)
+	}
 
-			/*
-			*	When working with multiple partition disks, I find once it adds the entry for the disk
-			*	Adding it for the partitions fails, so skip in this case. E.g. /proc/partitions of:
-			*	   8        0  488386584 sda
-			*	   8        1     524288 sda1
-			*	   8        2  486860800 sda2
-			*
-			*	Failed with:
-			*	Failed to add io.max line: "8:1 rbps=1048576000 wbps=10485760 riops=1000000 wiops=1000000", skipping partition
-			*	Failed to add io.max line: "8:2 rbps=1048576000 wbps=10485760 riops=1000000 wiops=1000000", skipping partition
-			 */
-			if err := os.WriteFile(filepath.Join(cgroupPath, IO_MAX_FILE), []byte(majorMinorLimit), os.ModePerm); err != nil {
-				fmt.Printf("Failed to add io.max line: \"%s\", skipping partition\n", majorMinorLimit)
-			}
+	for _, partition := range partitions {
+		majorMinorLimit := fmt.Sprintf(IO_LIMITS, partition.major, partition.minor)
+
+		/*
+		*	When working with multiple partition disks, I find once it adds the entry for the disk
+		*	Adding it for the partitions fails, so skip in this case. E.g. /proc/partitions of:
+		*	   8        0  488386584 sda
+		*	   8        1     524288 sda1
+		*	   8        2  486860800 sda2
+		*
+		*	Failed with:
+		*	Failed to add io.max line: "8:1 rbps=1048576000 wbps=10485760 riops=1000000 wiops=1000000", skipping partition
+		*	Failed to add io.max line: "8:2 rbps=1048576000 wbps=10485760 riops=1000000 wiops=1000000", skipping partition
+		 */
+		if err := os.WriteFile(filepath.Join(cgroupPath, IO_MAX_FILE), []byte(majorMinorLimit), os.ModePerm); err != nil {
+			fmt.Printf("Failed to add io.max line: \"%s\", skipping partition\n", majorMinorLimit)
 		}
 	}
 
@@ -134,29 +137,31 @@ func (cgroup *CGroup) Close() error {
 }
 
 func readPartitions() ([]partition, error) {
-	if partitionFile, err := os.Open("/proc/partitions"); err != nil {
+	partitionFile, err := os.Open("/proc/partitions")
+	if err != nil {
 		return nil, err
-	} else {
-		if re, err := regexp.Compile(`^\s*(\d*)\s*(\d*)\s*\d*\s[a-zA-Z0-9]*$`); err != nil {
-			return nil, err
-		} else {
-			var partitions []partition
-			scanner := bufio.NewScanner(partitionFile)
-			if scanner == nil {
-				return nil, errors.New("/proc/partitions scanner nil")
-			}
+	}
 
-			for scanner.Scan() {
-				matches := re.FindStringSubmatch(scanner.Text())
-				if len(matches) == 3 {
-					partitions = append(partitions, partition{
-						major: matches[1],
-						minor: matches[2],
-					})
-				}
-			}
+	re, err := regexp.Compile(`^\s*(\d*)\s*(\d*)\s*\d*\s[a-zA-Z0-9]*$`)
+	if err != nil {
+		return nil, err
+	}
 
-			return partitions, nil
+	var partitions []partition
+	scanner := bufio.NewScanner(partitionFile)
+	if scanner == nil {
+		return nil, errors.New("/proc/partitions scanner nil")
+	}
+
+	for scanner.Scan() {
+		matches := re.FindStringSubmatch(scanner.Text())
+		if len(matches) == 3 {
+			partitions = append(partitions, partition{
+				major: matches[1],
+				minor: matches[2],
+			})
 		}
 	}
+
+	return partitions, nil
 }
