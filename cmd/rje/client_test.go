@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/pflag"
 	"google.golang.org/grpc/codes"
-	gstatus "google.golang.org/grpc/status"
+	grpc_status "google.golang.org/grpc/status"
 )
 
 // Just using contents of actual keys for ease, regenerate keys if deploying
@@ -165,14 +165,14 @@ func TestClientConnection(t *testing.T) {
 	}
 	defer shutdownServer()
 
-	validCommand := []string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "ls"}
+	validCommand := []string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "sleep", "1"}
 	failCommand := []string{"start", "-s", connAddr, "--ca-file", INVALID_CERT_AUTHORITY, "--cert-file", INVALID_CLIENT_PUB, "--key-file", INVALID_CLIENT_PRIV, "--", "ls"}
 
-	if err = start(failCommand); err == nil {
+	if _, err = start(failCommand); err == nil {
 		t.Error(fmt.Sprintf("Connection should fail with bad keys"))
 	}
 
-	if err = start(validCommand); err != nil && gstatus.Code(err) != codes.Unimplemented {
+	if _, err = start(validCommand); err != nil {
 		t.Error(fmt.Sprintf("Connection should pass with good keys: %s", err.Error()))
 	}
 }
@@ -185,19 +185,20 @@ func TestClientCommands(t *testing.T) {
 	}
 	defer shutdownServer()
 
-	if err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "ls"}); err != nil && gstatus.Code(err) != codes.Unimplemented {
+	jobId, err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "sleep", "10"})
+	if err != nil {
 		t.Error(fmt.Sprintf("Start should behave correctly: %s", err.Error()))
 	}
 
-	if err := status([]string{"status", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", "123"}); err != nil && gstatus.Code(err) != codes.Unimplemented {
+	if _, err := status([]string{"status", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", jobId}); err != nil {
 		t.Error(fmt.Sprintf("Status should behave correctly: %s", err.Error()))
 	}
 
-	if err := stop([]string{"stop", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", "123"}); err != nil && gstatus.Code(err) != codes.Unimplemented {
+	if _, err := stop([]string{"stop", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", jobId}); err != nil {
 		t.Error(fmt.Sprintf("Stop should behave correctly: %s", err.Error()))
 	}
 
-	if err := tail([]string{"tail", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", "123"}); err != nil && gstatus.Code(err) != codes.Unimplemented {
+	if err := tail([]string{"tail", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", "123"}); err != nil && grpc_status.Code(err) != codes.Unimplemented {
 		t.Error(fmt.Sprintf("Tail should behave correctly: %s", err.Error()))
 	}
 }
