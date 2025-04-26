@@ -44,14 +44,14 @@ func (jSS *jobServiceServer) Stop(ctx context.Context, req *proto.JobIdRequest) 
 		return nil, errors.New("empty request")
 	}
 
-	exitCode, forceKill, err := jSS.remoteJobRunner.Stop(req.JobId)
+	exitCode, exitedClean, err := jSS.remoteJobRunner.Stop(req.JobId)
 	if err != nil {
 		return nil, err
 	}
 
 	return &proto.JobStopResponse{
 		ExitCode:   int32(exitCode),
-		ForceEnded: forceKill,
+		ForceEnded: !exitedClean,
 	}, nil
 }
 
@@ -88,5 +88,5 @@ func (jSS *jobServiceServer) Tail(req *proto.JobIdRequest, stream grpc.ServerStr
 		return errors.New("empty request")
 	}
 
-	return jSS.UnimplementedJobsServiceServer.Tail(req, stream)
+	return jSS.remoteJobRunner.Tail(req.JobId, &StreamWriter{stream: stream})
 }

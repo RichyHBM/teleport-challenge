@@ -13,7 +13,6 @@ type RemoteJob struct {
 	uuid         uuid.UUID
 	outputStream *OutputStream
 	command      *exec.Cmd
-	running      bool
 }
 
 func NewRemoteJob() (*RemoteJob, error) {
@@ -29,7 +28,6 @@ func NewRemoteJob() (*RemoteJob, error) {
 			uuid:         uuid,
 			outputStream: outputStream,
 			command:      nil,
-			running:      false,
 		}, nil
 	}
 }

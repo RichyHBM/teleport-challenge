@@ -7,8 +7,6 @@ import (
 	"testing"
 
 	"github.com/spf13/pflag"
-	"google.golang.org/grpc/codes"
-	grpc_status "google.golang.org/grpc/status"
 )
 
 // Just using contents of actual keys for ease, regenerate keys if deploying
@@ -185,7 +183,7 @@ func TestClientCommands(t *testing.T) {
 	}
 	defer shutdownServer()
 
-	jobId, err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "sleep", "10"})
+	jobId, err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "echo", "1234"})
 	if err != nil {
 		t.Error(fmt.Sprintf("Start should behave correctly: %s", err.Error()))
 	}
@@ -198,7 +196,7 @@ func TestClientCommands(t *testing.T) {
 		t.Error(fmt.Sprintf("Stop should behave correctly: %s", err.Error()))
 	}
 
-	if err := tail([]string{"tail", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", "123"}); err != nil && grpc_status.Code(err) != codes.Unimplemented {
+	if err := tail([]string{"tail", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", jobId}); err != nil {
 		t.Error(fmt.Sprintf("Tail should behave correctly: %s", err.Error()))
 	}
 }

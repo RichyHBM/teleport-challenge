@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/orsinium-labs/cliff"
@@ -209,7 +210,8 @@ func tail(args []string) error {
 				return err
 			}
 		} else {
-			fmt.Println(jobTailResponse)
+			msg := strings.Replace(string(jobTailResponse.Message), "\\n", "\n", -1)
+			fmt.Print(msg)
 		}
 	}
 }
