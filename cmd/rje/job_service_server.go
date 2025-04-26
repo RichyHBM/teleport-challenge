@@ -9,11 +9,13 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Custom GRPC Server implementation
 type jobServiceServer struct {
 	proto.UnimplementedJobsServiceServer
 	remoteJobRunner rje.RemoteJobRunner
 }
 
+// Start checks the passed in request data and calls the library Start method to initiate a new job
 func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartRequest) (*proto.JobStartResponse, error) {
 	if req == nil {
 		return nil, errors.New("empty request")
@@ -39,6 +41,7 @@ func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartReque
 	}, nil
 }
 
+// Stop checks the passed in request data and calls the library Stop method to terminate a running job
 func (jSS *jobServiceServer) Stop(ctx context.Context, req *proto.JobIdRequest) (*proto.JobStopResponse, error) {
 	if req == nil {
 		return nil, errors.New("empty request")
@@ -55,6 +58,7 @@ func (jSS *jobServiceServer) Stop(ctx context.Context, req *proto.JobIdRequest) 
 	}, nil
 }
 
+// Status checks the passed in request data and calls the library Status method to query a job
 func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest) (*proto.JobStatusResponse, error) {
 	if req == nil {
 		return nil, errors.New("empty request")
@@ -83,6 +87,7 @@ func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest
 	}, nil
 }
 
+// Tail checks the passed in request data and calls the library Tail, streaming back any output, and blocking until the job has ended
 func (jSS *jobServiceServer) Tail(req *proto.JobIdRequest, stream grpc.ServerStreamingServer[proto.JobOutputResponse]) error {
 	if req == nil {
 		return errors.New("empty request")

@@ -16,6 +16,9 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Function takes in the program arguments and splits it up in to arguments Start can use
+// notably turning them in to StartArgs for program options, and a []string to store the
+// remote command to use and its arguments
 func splitFlagsAndRemoteCommand(args []string) (StartArgs, []string, error) {
 	if len(args) <= 1 {
 		return StartArgs{}, nil, errors.New("program requires more arguments")
@@ -46,6 +49,7 @@ func splitFlagsAndRemoteCommand(args []string) (StartArgs, []string, error) {
 	return flags, args[argumentsEndIndex+1:], nil
 }
 
+// Start makes a call to the server passing up the command and args to run
 // Start is more complex than other methods as we need to
 // isolate program arguments from job command/arguments
 func start(args []string) (string, error) {
@@ -85,6 +89,8 @@ func start(args []string) (string, error) {
 	return jobResponse.JobId, nil
 }
 
+// Stop issues a call to the server to stop the given command, and prints out the
+// resulting information
 func stop(args []string) (string, error) {
 	flags, err := cliff.Parse(os.Stderr, args, stopStatusTailFlags)
 	if err != nil {
@@ -122,6 +128,7 @@ func stop(args []string) (string, error) {
 	return fmt.Sprintf("Job ended with: %d, was force ended: %t\n", jobResponse.ExitCode, jobResponse.ForceEnded), nil
 }
 
+// Status issues a query call to the server, and prints out the resulting information
 func status(args []string) (string, error) {
 	flags, err := cliff.Parse(os.Stderr, args, stopStatusTailFlags)
 	if err != nil {
@@ -168,6 +175,7 @@ func status(args []string) (string, error) {
 	return "", nil
 }
 
+// Tail issues a stream request to the server, and prints out any streamed information returned
 func tail(args []string) error {
 	flags, err := cliff.Parse(os.Stderr, args, stopStatusTailFlags)
 	if err != nil {

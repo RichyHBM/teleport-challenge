@@ -8,9 +8,9 @@ import (
 )
 
 func TestOutputStreamMaintainsOrder(t *testing.T) {
-	outputStream := NewOutputStream()
+	outputStream := newOutputStream()
 	defer outputStream.Close()
-	
+
 	var wg sync.WaitGroup
 
 	asyncMethod := func(arr []string) {

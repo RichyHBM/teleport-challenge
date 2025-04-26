@@ -1,3 +1,7 @@
+// Package rje implements the logic behind the remote job executor
+//
+// It provides functions and types to start, stop, get the status of,
+// and follow the output of initiated jobs
 package rje
 
 import (
@@ -10,28 +14,34 @@ import (
 	"time"
 )
 
+// Errors returned by the library, to be used for testing against
 var (
 	ErrJobNotFound    = errors.New("job with that id not found")
 	ErrDuplicateUUID  = errors.New("existing uuid was generated, usually re-running should solve this")
 	ErrNoProcessState = errors.New("no process state after stop")
 )
 
+// RemoteJobRunner is the data structure the library uses to keep hold of overall
+// executed jobs
 type RemoteJobRunner struct {
-	availableJobs map[string]*RemoteJob
+	availableJobs map[string]*remoteJob
 	mutex         sync.RWMutex
 }
 
+// RemoteJobRunner Start runs the passed in command + arguments returning a job ID
+// used to query and action against the job.
+// It will also return if the command wasn't found or if the command exited.
 func (rjr *RemoteJobRunner) Start(command []string) (string, bool, bool, error) {
 	// Create map if it doesn't exist, check for exist both before and after locking
 	if rjr.availableJobs == nil {
 		rjr.mutex.Lock()
 		if rjr.availableJobs == nil {
-			rjr.availableJobs = make(map[string]*RemoteJob)
+			rjr.availableJobs = make(map[string]*remoteJob)
 		}
 		rjr.mutex.Unlock()
 	}
 
-	if remoteJob, err := NewRemoteJob(); err != nil {
+	if remoteJob, err := newRemoteJob(); err != nil {
 		return "", false, false, err
 	} else {
 		uuidString := remoteJob.uuid.String()
@@ -59,7 +69,7 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, bool, bool, error) 
 			return "", false, false, cmd.Err
 		}
 
-		//Save the command, and save the job to the map
+		// Save the command, and save the job to the map
 		remoteJob.command = cmd
 
 		rjr.mutex.Lock()
@@ -73,12 +83,14 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, bool, bool, error) 
 	}
 }
 
+// RemoteJobRunner Stop will stop the passed in job ID returning the jobs
+// exit code as well as if the process needed to be force ended
 func (rjr *RemoteJobRunner) Stop(uuid string) (int, bool, error) {
 	// Create map if it doesn't exist, check for exist both before and after locking
 	if rjr.availableJobs == nil {
 		rjr.mutex.Lock()
 		if rjr.availableJobs == nil {
-			rjr.availableJobs = make(map[string]*RemoteJob)
+			rjr.availableJobs = make(map[string]*remoteJob)
 		}
 		rjr.mutex.Unlock()
 	}
@@ -116,12 +128,15 @@ func (rjr *RemoteJobRunner) Stop(uuid string) (int, bool, error) {
 	return 0, false, ErrNoProcessState
 }
 
+// RemoteJobRunner Status returns the current ProcessState which can be used to
+// figure the exit state of the process, a nil ProcessState indicates the job
+// is still running
 func (rjr *RemoteJobRunner) Status(uuid string) (*os.ProcessState, error) {
 	// Create map if it doesn't exist, check for exist both before and after locking
 	if rjr.availableJobs == nil {
 		rjr.mutex.Lock()
 		if rjr.availableJobs == nil {
-			rjr.availableJobs = make(map[string]*RemoteJob)
+			rjr.availableJobs = make(map[string]*remoteJob)
 		}
 		rjr.mutex.Unlock()
 	}
@@ -138,12 +153,15 @@ func (rjr *RemoteJobRunner) Status(uuid string) (*os.ProcessState, error) {
 	return job.command.ProcessState, nil
 }
 
+// RemoteJobRunner Tail will stream the output from the job to any connected client
+// if a job is running it will stream all previous output and then block until the job
+// ends, streaming any additional output to the client as it is consumed.
 func (rjr *RemoteJobRunner) Tail(uuid string, writer io.Writer) error {
 	// Create map if it doesn't exist, check for exist both before and after locking
 	if rjr.availableJobs == nil {
 		rjr.mutex.Lock()
 		if rjr.availableJobs == nil {
-			rjr.availableJobs = make(map[string]*RemoteJob)
+			rjr.availableJobs = make(map[string]*remoteJob)
 		}
 		rjr.mutex.Unlock()
 	}

@@ -12,6 +12,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Instanciates a new GRPC server, registering the RemoteJobService server to fulfill the
+// server actions
 func createGrpcServer(port int, certFile []byte, keyFile []byte, certAuthorityFile []byte) (*grpc.Server, net.Listener, error) {
 	// Create a listener that listens to localhost
 	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
@@ -30,6 +32,8 @@ func createGrpcServer(port int, certFile []byte, keyFile []byte, certAuthorityFi
 	return grpcServer, listener, nil
 }
 
+// Creates a new server instance and runs it, listening on the port provided in the arguments
+// This method will block indefinitely
 func serve(args []string) error {
 	flags, err := cliff.Parse(os.Stderr, args, serveFlags)
 	if err != nil {

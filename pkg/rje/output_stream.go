@@ -7,22 +7,27 @@ import (
 	"sync"
 )
 
+// Stream used to manage writing data to connected clients,
+// and store job output to memory for future connecting clients
 // Implements io.WriteCloser
-type OutputStream struct {
+type outputStream struct {
 	buffer           *bytes.Buffer
 	connectedWriters []io.Writer
 	mutex            sync.RWMutex
 }
 
-func NewOutputStream() *OutputStream {
-	return &OutputStream{
+// Creates a new OutputStream for use by the library
+func newOutputStream() *outputStream {
+	return &outputStream{
 		buffer:           bytes.NewBuffer([]byte{}),
 		connectedWriters: []io.Writer{},
 		mutex:            sync.RWMutex{},
 	}
 }
 
-func (oS *OutputStream) Write(p []byte) (n int, err error) {
+// OutputStream Write method writes the given data to its in memory buffer,
+// as well as sending any data to all connected clients
+func (oS *outputStream) Write(p []byte) (n int, err error) {
 	oS.mutex.Lock()
 	defer oS.mutex.Unlock()
 
@@ -53,20 +58,25 @@ func (oS *OutputStream) Write(p []byte) (n int, err error) {
 	return oS.buffer.Write(p)
 }
 
-func (oS *OutputStream) GetBuffer() []byte {
+// OutputStream GetBuffer returns the contents of the OutputStream
+func (oS *outputStream) GetBuffer() []byte {
 	oS.mutex.RLock()
 	defer oS.mutex.RUnlock()
 
 	return oS.buffer.Bytes()
 }
 
-func (oS *OutputStream) Connect(newWriter io.Writer) error {
+// OutputStream Connect method adds a new client io.Writer to the list
+// of connected clients
+func (oS *outputStream) Connect(newWriter io.Writer) error {
 	oS.mutex.Lock()
 	defer oS.mutex.Unlock()
 	oS.connectedWriters = append(oS.connectedWriters, newWriter)
 	return nil
 }
 
-func (oS *OutputStream) Close() error {
+// OutputStream Close method to satisfy the io.WriterCloser interface
+// Currently does nothing
+func (oS *outputStream) Close() error {
 	return nil
 }
