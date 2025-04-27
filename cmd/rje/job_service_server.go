@@ -60,7 +60,7 @@ func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest
 		return nil, errors.New("empty request")
 	}
 
-	process, processState, err := jSS.remoteJobRunner.Status(req.JobId)
+	isRunning, processState, err := jSS.remoteJobRunner.Status(req.JobId)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +68,10 @@ func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest
 	var status proto.JobStatus
 	exitCode := -1
 
-	if process != nil {
+	if isRunning {
 		status = proto.JobStatus_JobStatus_RUNNING
+	} else {
+		status = proto.JobStatus_JobStatus_ENDED
 	}
 
 	if processState != nil {

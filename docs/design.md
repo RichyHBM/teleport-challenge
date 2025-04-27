@@ -94,7 +94,7 @@ to identify the server endpoint:
    ```
    The tail command will act in a similar way to the `tail -f` command, executing for the length
    of the job, and returning a full history of the jobs output. Passing in a previously ended job
-   should return its full output history. This command will block until a Stop command is issued.
+   should return its full output history.
 
 Ideally there would also be additional commands for things like fetching a list of jobs started by
 the current user, as well as a history of jobs and their status, etc. But for the challenge this isn't

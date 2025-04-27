@@ -15,6 +15,7 @@ type remoteJob struct {
 	uuid         uuid.UUID
 	outputStream *outputStream
 	command      *exec.Cmd
+	processId    int
 }
 
 // Initialised a new RemoteJob with an empty command
@@ -31,6 +32,7 @@ func newRemoteJob() (*remoteJob, error) {
 			uuid:         uuid,
 			outputStream: outputStream,
 			command:      nil,
+			processId:    -1,
 		}, nil
 	}
 }

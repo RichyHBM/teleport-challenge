@@ -2,6 +2,7 @@ package rje
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -70,7 +71,7 @@ func TestRemoteJobRunnerStopRunningJob(t *testing.T) {
 func TestRemoteJobRunnerStopImmediateJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if jobId, _, err := remoteJobRunner.Start([]string{"echo", "5"}); err != nil {
+	if jobId, _, err := remoteJobRunner.Start([]string{"true"}); err != nil {
 		t.Error("Start should not error")
 	} else {
 		if exitCode, exitCleanly, err := remoteJobRunner.Stop(jobId); err != nil {
@@ -110,18 +111,47 @@ func TestRemoteJobRunnerStatusRandomJob(t *testing.T) {
 func TestRemoteJobRunnerStatusRunningJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "5"}); err != nil {
+	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "10"}); err != nil {
 		t.Error("Start should not error")
 	} else {
-		if process, processState, err := remoteJobRunner.Status(jobId); err != nil {
+		if isRunning, processState, err := remoteJobRunner.Status(jobId); err != nil {
 			t.Errorf("Status shouldn't error: %s", err.Error())
 		} else {
-			if process == nil {
-				t.Error("Status running job should return valid process")
+			if !isRunning {
+				t.Error("Status running job should return running")
 			}
 
 			if processState != nil {
 				t.Error("Status running job should return nil process state")
+			}
+		}
+
+		if _, _, err := remoteJobRunner.Stop(jobId); err != nil {
+			t.Errorf("Stop shouldn't error: %s", err.Error())
+		}
+
+		if _, processState, err := remoteJobRunner.Status(jobId); err != nil {
+			t.Errorf("Status shouldn't error: %s", err.Error())
+		} else {
+			if processState == nil {
+				t.Error("Status running job should return valid process state")
+			}
+		}
+	}
+}
+
+func TestRemoteJobRunnerStatusQuickJob(t *testing.T) {
+	remoteJobRunner := &RemoteJobRunner{}
+
+	if jobId, _, err := remoteJobRunner.Start([]string{"true"}); err != nil {
+		t.Error("Start should not error")
+	} else {
+		if isRunning, _, err := remoteJobRunner.Status(jobId); err != nil {
+			t.Errorf("Status shouldn't error: %s", err.Error())
+		} else {
+			if isRunning {
+				fmt.Println("Status quick job should return not running")
+				t.Error("Status quick job should return not running")
 			}
 		}
 
@@ -208,16 +238,6 @@ func TestRemoteJobRunnerTailImmediateJob(t *testing.T) {
 			}
 			return len(p), nil
 		}
-
-		timer := time.AfterFunc(time.Microsecond, func() {
-			if _, _, err := remoteJobRunner.Stop(jobId); err != nil {
-				t.Errorf("Stop shouldn't error: %s", err.Error())
-			}
-			if err := remoteJobRunner.Tail(jobId, rjrt); err != nil {
-				t.Errorf("Tail returned unexpected error: %s", err.Error())
-			}
-		})
-		defer timer.Stop()
 
 		if err := remoteJobRunner.Tail(jobId, rjrt); err != nil {
 			t.Errorf("Tail returned unexpected error: %s", err.Error())

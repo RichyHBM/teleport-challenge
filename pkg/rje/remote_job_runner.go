@@ -10,6 +10,9 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -61,7 +64,7 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, bool, error) {
 		cmd.Stdout = remoteJob.outputStream
 		cmd.Stderr = remoteJob.outputStream
 
-		if err:= cmd.Start(); err != nil {
+		if err := cmd.Start(); err != nil {
 			return "", false, err
 		}
 
@@ -75,6 +78,7 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, bool, error) {
 
 		// Save the command, and save the job to the map
 		remoteJob.command = cmd
+		remoteJob.processId = cmd.Process.Pid
 		rjr.availableJobs[uuidString] = remoteJob
 
 		isRunning := cmd.ProcessState == nil
@@ -119,9 +123,8 @@ func (rjr *RemoteJobRunner) Stop(uuid string) (int, bool, error) {
 	defer timer.Stop()
 
 	// Wait if the process is still running, dont return error if it is a kill error that is expected
-		if err := job.command.Wait(); err != nil && err.Error() != "signal: killed" {
-			return -1, false, err
-		
+	if err := job.command.Wait(); err != nil && err.Error() != "signal: killed" {
+		return -1, false, err
 	}
 
 	if job.command.ProcessState != nil {
@@ -133,7 +136,7 @@ func (rjr *RemoteJobRunner) Stop(uuid string) (int, bool, error) {
 // RemoteJobRunner Status returns the current ProcessState which can be used to
 // figure the exit state of the process, a nil ProcessState indicates the job
 // is still running
-func (rjr *RemoteJobRunner) Status(uuid string) (*os.Process, *os.ProcessState, error) {
+func (rjr *RemoteJobRunner) Status(uuid string) (bool, *os.ProcessState, error) {
 	// Create map if it doesn't exist, check for exist both before and after locking
 	if rjr.availableJobs == nil {
 		rjr.mutex.Lock()
@@ -149,10 +152,15 @@ func (rjr *RemoteJobRunner) Status(uuid string) (*os.Process, *os.ProcessState, 
 	job, hasJob := rjr.availableJobs[uuid]
 
 	if !hasJob {
-		return nil, nil, ErrJobNotFound
+		return false, nil, ErrJobNotFound
 	}
 
-	return job.command.Process, job.command.ProcessState, nil
+	running, err := IsProcessRunning(job.processId)
+	if err != nil {
+		return false, nil, err
+	}
+
+	return running, job.command.ProcessState, nil
 }
 
 // RemoteJobRunner Tail will stream the output from the job to any connected client
@@ -185,9 +193,44 @@ func (rjr *RemoteJobRunner) Tail(uuid string, writer io.Writer) error {
 	// Register the client as a new write receiver, wait until the job is stopped
 	job.outputStream.Connect(writer)
 
-	for job.command.Process != nil && job.command.ProcessState == nil {
+	isRunning, err := IsProcessRunning(job.processId)
+	if err != nil {
+		return err
+	}
+
+	for isRunning {
 		time.Sleep(time.Second)
+		isRunning, err = IsProcessRunning(job.processId)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
+}
+
+// Finds and checks if a given process exists and is in a state we consider to be running
+func IsProcessRunning(pid int) (bool, error) {
+	cmd := exec.Command("ps", "ax")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return false, err
+	}
+	outputStr := string(output)
+
+	re, err := regexp.Compile(`^\s+(\d*)\s+\S*\s+([a-zA-Z]\S*)\s*.*$`)
+	if err != nil {
+		return false, err
+	}
+
+	for _, outputLine := range strings.Split(outputStr, "\n") {
+		matches := re.FindStringSubmatch(outputLine)
+		if len(matches) > 2 {
+			if matches[1] == strconv.Itoa(pid) {
+				return matches[2] == "R+" || matches[2] == "S+", nil
+			}
+		}
+	}
+
+	return false, nil
 }
