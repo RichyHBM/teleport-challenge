@@ -98,7 +98,7 @@ b6y4ZQHNT39D3bnAZt7WnJGQjZ1i5swNcA==
 )
 
 func startServer(certFile []byte, keyFile []byte, certAuthorityFile []byte) (func(), string, error) {
-	grpcServer, listener, err := createGrpcServer(0, certFile, keyFile, certAuthorityFile)
+	grpcServer, listener, jobService, err := createGrpcServer(0, certFile, keyFile, certAuthorityFile)
 	if err != nil {
 		return nil, "", err
 	}
@@ -112,6 +112,7 @@ func startServer(certFile []byte, keyFile []byte, certAuthorityFile []byte) (fun
 	return func() {
 		grpcServer.GracefulStop()
 		listener.Close()
+		jobService.Close()
 	}, listener.Addr().String(), nil
 }
 

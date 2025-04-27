@@ -97,3 +97,7 @@ func (jSS *jobServiceServer) Tail(req *proto.JobIdRequest, stream grpc.ServerStr
 
 	return jSS.remoteJobRunner.Tail(req.JobId, &StreamWriter{stream: stream})
 }
+
+func (jSS *jobServiceServer) Close() {
+	jSS.remoteJobRunner.Cleanup()
+}

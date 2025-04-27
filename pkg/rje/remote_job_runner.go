@@ -209,6 +209,18 @@ func (rjr *RemoteJobRunner) Tail(uuid string, writer io.Writer) error {
 	return nil
 }
 
+// Cleans up any lingering jobs
+func (rjr *RemoteJobRunner) Cleanup() {
+	rjr.mutex.Lock()
+	defer rjr.mutex.Unlock()
+
+	for _, job := range rjr.availableJobs {
+		if job != nil && job.command != nil && job.command.Process != nil {
+			job.command.Process.Kill()
+		}
+	}
+}
+
 // Finds and checks if a given process exists and is in a state we consider to be running
 func IsProcessRunning(pid int) (bool, error) {
 	cmd := exec.Command("ps", "ax")
@@ -218,7 +230,7 @@ func IsProcessRunning(pid int) (bool, error) {
 	}
 	outputStr := string(output)
 
-	re, err := regexp.Compile(`^\s+(\d*)\s+\S*\s+([a-zA-Z]\S*)\s*.*$`)
+	re, err := regexp.Compile(`^\s*(\d*)\s+\S*\s+([a-zA-Z]\S*)\s*.*$`)
 	if err != nil {
 		return false, err
 	}
