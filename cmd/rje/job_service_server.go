@@ -12,6 +12,7 @@ import (
 type jobServiceServer struct {
 	proto.UnimplementedJobsServiceServer
 	remoteJobRunner rje.RemoteJobRunner
+	useCgroups      bool
 }
 
 func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartRequest) (*proto.JobStartResponse, error) {

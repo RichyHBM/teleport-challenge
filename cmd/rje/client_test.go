@@ -100,7 +100,7 @@ b6y4ZQHNT39D3bnAZt7WnJGQjZ1i5swNcA==
 )
 
 func startServer(certFile []byte, keyFile []byte, certAuthorityFile []byte) (func(), string, error) {
-	grpcServer, listener, err := createGrpcServer(0, certFile, keyFile, certAuthorityFile)
+	grpcServer, listener, err := createGrpcServer(0, certFile, keyFile, certAuthorityFile, false)
 	if err != nil {
 		return nil, "", err
 	}

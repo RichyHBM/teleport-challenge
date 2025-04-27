@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func createGrpcServer(port int, certFile []byte, keyFile []byte, certAuthorityFile []byte) (*grpc.Server, net.Listener, error) {
+func createGrpcServer(port int, certFile []byte, keyFile []byte, certAuthorityFile []byte, useCgroups bool) (*grpc.Server, net.Listener, error) {
 	// Create a listener that listens to localhost
 	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
@@ -27,32 +27,38 @@ func createGrpcServer(port int, certFile []byte, keyFile []byte, certAuthorityFi
 	}
 
 	grpcServer := grpc.NewServer(grpc.Creds(tlsCredentials))
-	proto.RegisterJobsServiceServer(grpcServer, &jobServiceServer{})
+	proto.RegisterJobsServiceServer(grpcServer, &jobServiceServer{useCgroups: useCgroups })
 
 	return grpcServer, listener, nil
 }
 
 func serve(args []string) error {
-	// TODO: Dont want to mess with user machine for challenge, so just error out if not supported
-	// In prod maybe this could edit the files, but for this only modify for sub-cgroups
-	if err := rje.CheckCgroupSupportsEntries(); err != nil {
-		return err
-	}
-
 	flags, err := cliff.Parse(os.Stderr, args, serveFlags)
 	if err != nil {
 		return err
 	}
 
-	grpcServer, listener, err := createGrpcServer(flags.port, []byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
+	// TODO: Dont want to mess with user machine for challenge, so just error out if not supported
+	// In prod maybe this could edit the files, but for this only modify for sub-cgroups
+	if !flags.skipCgroups {
+		if err := rje.CheckCgroupSupportsEntries(); err != nil {
+			return err
+		}
+	}
+
+	grpcServer, listener, err := createGrpcServer(flags.port, []byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile), !flags.skipCgroups)
 	if err != nil {
 		return err
 	}
 	defer grpcServer.Stop()
 
-	parentCGroup, err := rje.SetupCGroupFromName("remote-job-challenge", false)
-	if err != nil {
-		return err
+	var parentCGroup *rje.CGroup
+
+	if !flags.skipCgroups {
+		parentCGroup, err = rje.SetupCGroupFromName("remote-job-challenge", false)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Listen for sig interrupts and properly cleanup
@@ -63,7 +69,11 @@ func serve(args []string) error {
 		cleanup(grpcServer, parentCGroup)
 	}()
 
-	defer parentCGroup.Close()
+	defer func() {
+		if parentCGroup != nil {
+			parentCGroup.Close()
+		}
+	}()
 
 	log.Printf("Starting up on %s", listener.Addr().String())
 	return grpcServer.Serve(listener)
@@ -77,7 +87,9 @@ func cleanup(grpcServer *grpc.Server, parentCGroup *rje.CGroup) {
 	defer timer.Stop()
 	grpcServer.GracefulStop()
 
-	if err := parentCGroup.Close(); err != nil {
-		fmt.Println(err)
+	if parentCGroup != nil {
+		if err := parentCGroup.Close(); err != nil {
+			fmt.Println(err)
+		}
 	}
 }
