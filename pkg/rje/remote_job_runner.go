@@ -30,8 +30,8 @@ type RemoteJobRunner struct {
 
 // RemoteJobRunner Start runs the passed in command + arguments returning a job ID
 // used to query and action against the job.
-// It will also return if the command wasn't found or if the command exited.
-func (rjr *RemoteJobRunner) Start(command []string) (string, bool, bool, error) {
+// It will also return if the command exited.
+func (rjr *RemoteJobRunner) Start(command []string) (string, bool, error) {
 	// Create map if it doesn't exist, check for exist both before and after locking
 	if rjr.availableJobs == nil {
 		rjr.mutex.Lock()
@@ -42,44 +42,43 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, bool, bool, error) 
 	}
 
 	if remoteJob, err := newRemoteJob(); err != nil {
-		return "", false, false, err
+		return "", false, err
 	} else {
 		uuidString := remoteJob.uuid.String()
 
 		rjr.mutex.RLock()
 		if _, exists := rjr.availableJobs[uuidString]; exists {
 			rjr.mutex.RUnlock()
-			return "", false, false, ErrDuplicateUUID
+			return "", false, ErrDuplicateUUID
 		}
 		rjr.mutex.RUnlock()
+
+		rjr.mutex.Lock()
+		defer rjr.mutex.Unlock()
 
 		cmd := exec.Command(command[0], command[1:]...)
 		// Future features could store output in different streams and allow user to request specific stream
 		cmd.Stdout = remoteJob.outputStream
 		cmd.Stderr = remoteJob.outputStream
 
-		// starting it up in a goroutine means ProcessState will populate if it ends
-		cmd.Start()
+		if err:= cmd.Start(); err != nil {
+			return "", false, err
+		}
 
 		// If there is an error, make sure it terminates the process
 		if cmd.Err != nil {
 			if cmd.Process != nil {
 				cmd.Process.Kill()
 			}
-			return "", false, false, cmd.Err
+			return "", false, cmd.Err
 		}
 
 		// Save the command, and save the job to the map
 		remoteJob.command = cmd
-
-		rjr.mutex.Lock()
-		defer rjr.mutex.Unlock()
-
 		rjr.availableJobs[uuidString] = remoteJob
 
-		foundExec := cmd.Err == nil
-		isRunning := cmd.ProcessState != nil
-		return remoteJob.uuid.String(), foundExec, isRunning, nil
+		isRunning := cmd.ProcessState == nil
+		return remoteJob.uuid.String(), isRunning, nil
 	}
 }
 
@@ -111,15 +110,18 @@ func (rjr *RemoteJobRunner) Stop(uuid string) (int, bool, error) {
 
 	// Give this a few seconds to see if it ends gracefully
 	timer := time.AfterFunc(time.Second, func() {
-		if err := job.command.Process.Kill(); err != nil {
-			fmt.Println(err)
+		if job.command.Process != nil {
+			if err := job.command.Process.Kill(); err != nil {
+				fmt.Println(err)
+			}
 		}
 	})
 	defer timer.Stop()
 
 	// Wait if the process is still running, dont return error if it is a kill error that is expected
-	if err := job.command.Wait(); err != nil && err.Error() != "signal: killed" {
-		return -1, false, err
+		if err := job.command.Wait(); err != nil && err.Error() != "signal: killed" {
+			return -1, false, err
+		
 	}
 
 	if job.command.ProcessState != nil {
@@ -131,7 +133,7 @@ func (rjr *RemoteJobRunner) Stop(uuid string) (int, bool, error) {
 // RemoteJobRunner Status returns the current ProcessState which can be used to
 // figure the exit state of the process, a nil ProcessState indicates the job
 // is still running
-func (rjr *RemoteJobRunner) Status(uuid string) (*os.ProcessState, error) {
+func (rjr *RemoteJobRunner) Status(uuid string) (*os.Process, *os.ProcessState, error) {
 	// Create map if it doesn't exist, check for exist both before and after locking
 	if rjr.availableJobs == nil {
 		rjr.mutex.Lock()
@@ -147,10 +149,10 @@ func (rjr *RemoteJobRunner) Status(uuid string) (*os.ProcessState, error) {
 	job, hasJob := rjr.availableJobs[uuid]
 
 	if !hasJob {
-		return nil, ErrJobNotFound
+		return nil, nil, ErrJobNotFound
 	}
 
-	return job.command.ProcessState, nil
+	return job.command.Process, job.command.ProcessState, nil
 }
 
 // RemoteJobRunner Tail will stream the output from the job to any connected client
@@ -180,9 +182,10 @@ func (rjr *RemoteJobRunner) Tail(uuid string, writer io.Writer) error {
 		return err
 	}
 
-	// Register the client as a new write receiver, wait until the process ends
+	// Register the client as a new write receiver, wait until the job is stopped
 	job.outputStream.Connect(writer)
-	for job.command.ProcessState == nil {
+
+	for job.command.Process != nil && job.command.ProcessState == nil {
 		time.Sleep(time.Second)
 	}
 

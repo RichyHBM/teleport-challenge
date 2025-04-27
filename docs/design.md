@@ -86,13 +86,15 @@ to identify the server endpoint:
    This will be used to fetch details on a specific job, such as if the job is still running,
    if it exited cleanly, etc.
 
+   In order to get full details on the job beyond if it is still running or not, user must call stop on the job first
+
 - Tail
    ```
    program tail --server=<server endpoint> --job=<job ID>
    ```
    The tail command will act in a similar way to the `tail -f` command, executing for the length
    of the job, and returning a full history of the jobs output. Passing in a previously ended job
-   should return its full output history.
+   should return its full output history. This command will block until a Stop command is issued.
 
 Ideally there would also be additional commands for things like fetching a list of jobs started by
 the current user, as well as a history of jobs and their status, etc. But for the challenge this isn't

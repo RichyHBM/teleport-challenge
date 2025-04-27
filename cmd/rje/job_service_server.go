@@ -21,7 +21,7 @@ func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartReque
 		return nil, errors.New("empty request")
 	}
 
-	jobId, foundExec, isRunning, err := jSS.remoteJobRunner.Start(req.Command)
+	jobId, isRunning, err := jSS.remoteJobRunner.Start(req.Command)
 	if err != nil {
 		return nil, err
 	}
@@ -29,10 +29,6 @@ func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartReque
 	status := proto.JobStartStatus_JobStartStatus_RUNNING
 	if !isRunning {
 		status = proto.JobStartStatus_JobStartStatus_EXITED_INSTANTLY
-	}
-
-	if !foundExec {
-		status = proto.JobStartStatus_JobStartStatus_COMMAND_NOT_FOUND
 	}
 
 	return &proto.JobStartResponse{
@@ -64,13 +60,17 @@ func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest
 		return nil, errors.New("empty request")
 	}
 
-	processState, err := jSS.remoteJobRunner.Status(req.JobId)
+	process, processState, err := jSS.remoteJobRunner.Status(req.JobId)
 	if err != nil {
 		return nil, err
 	}
 
-	status := proto.JobStatus_JobStatus_RUNNING
+	var status proto.JobStatus
 	exitCode := -1
+
+	if process != nil {
+		status = proto.JobStatus_JobStatus_RUNNING
+	}
 
 	if processState != nil {
 		exitCode = processState.ExitCode()
