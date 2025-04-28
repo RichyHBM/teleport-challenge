@@ -31,7 +31,6 @@ message JobStartResponse {
 // Stop/Query/Tail Request Message
 message JobIdRequest {
   string jobId = 1;
-  string username = 2;
 }
 
 // Stop Response

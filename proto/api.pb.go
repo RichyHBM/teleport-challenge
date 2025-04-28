@@ -232,7 +232,6 @@ func (x *JobStartResponse) GetStatus() JobStartStatus {
 type JobIdRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	JobId         string                 `protobuf:"bytes,1,opt,name=jobId,proto3" json:"jobId,omitempty"`
-	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -270,13 +269,6 @@ func (*JobIdRequest) Descriptor() ([]byte, []int) {
 func (x *JobIdRequest) GetJobId() string {
 	if x != nil {
 		return x.JobId
-	}
-	return ""
-}
-
-func (x *JobIdRequest) GetUsername() string {
-	if x != nil {
-		return x.Username
 	}
 	return ""
 }
@@ -441,10 +433,9 @@ const file_api_proto_rawDesc = "" +
 	"\busername\x18\x02 \x01(\tR\busername\"Q\n" +
 	"\x10JobStartResponse\x12\x14\n" +
 	"\x05jobId\x18\x01 \x01(\tR\x05jobId\x12'\n" +
-	"\x06Status\x18\x02 \x01(\x0e2\x0f.JobStartStatusR\x06Status\"@\n" +
+	"\x06Status\x18\x02 \x01(\x0e2\x0f.JobStartStatusR\x06Status\"$\n" +
 	"\fJobIdRequest\x12\x14\n" +
-	"\x05jobId\x18\x01 \x01(\tR\x05jobId\x12\x1a\n" +
-	"\busername\x18\x02 \x01(\tR\busername\"M\n" +
+	"\x05jobId\x18\x01 \x01(\tR\x05jobId\"M\n" +
 	"\x0fJobStopResponse\x12\x1e\n" +
 	"\n" +
 	"forceEnded\x18\x01 \x01(\bR\n" +

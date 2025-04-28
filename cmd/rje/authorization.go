@@ -20,12 +20,6 @@ func getAuthData() map[string][]string {
 	return authData
 }
 
-func HasAnyAuthorization(user string) bool {
-	authData := getAuthData()
-	_, isKnown := authData[user]
-	return isKnown
-}
-
 func IsAuthorized(user string, command string) bool {
 	authData := getAuthData()
 	authorizations, isKnown := authData[user]
