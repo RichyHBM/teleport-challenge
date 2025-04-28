@@ -50,11 +50,6 @@ func (oS *outputStream) Write(p []byte) (n int, err error) {
 		}
 	}
 
-	// Write to the in memory buffer, for future clients
-	if oS.buffer.Available() < len(p) {
-		oS.buffer.Grow(len(p) - oS.buffer.Available())
-	}
-
 	return oS.buffer.Write(p)
 }
 

@@ -20,19 +20,20 @@ type remoteJob struct {
 
 // Initialised a new RemoteJob with an empty command
 func newRemoteJob() (*remoteJob, error) {
-	if uuid, err := uuid.NewRandom(); err != nil {
+	uuid, err := uuid.NewRandom()
+	if err != nil {
 		return nil, err
-	} else {
-		outputStream := newOutputStream()
-		if outputStream == nil {
-			return nil, ErrNoOutputStream
-		}
-
-		return &remoteJob{
-			uuid:         uuid,
-			outputStream: outputStream,
-			command:      nil,
-			processId:    -1,
-		}, nil
 	}
+
+	outputStream := newOutputStream()
+	if outputStream == nil {
+		return nil, ErrNoOutputStream
+	}
+
+	return &remoteJob{
+		uuid:         uuid,
+		outputStream: outputStream,
+		command:      nil,
+		processId:    -1,
+	}, nil
 }

@@ -44,46 +44,47 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, bool, error) {
 		rjr.mutex.Unlock()
 	}
 
-	if remoteJob, err := newRemoteJob(); err != nil {
+	remoteJob, err := newRemoteJob()
+	if err != nil {
 		return "", false, err
-	} else {
-		uuidString := remoteJob.uuid.String()
-
-		rjr.mutex.RLock()
-		if _, exists := rjr.availableJobs[uuidString]; exists {
-			rjr.mutex.RUnlock()
-			return "", false, ErrDuplicateUUID
-		}
-		rjr.mutex.RUnlock()
-
-		rjr.mutex.Lock()
-		defer rjr.mutex.Unlock()
-
-		cmd := exec.Command(command[0], command[1:]...)
-		// Future features could store output in different streams and allow user to request specific stream
-		cmd.Stdout = remoteJob.outputStream
-		cmd.Stderr = remoteJob.outputStream
-
-		if err := cmd.Start(); err != nil {
-			return "", false, err
-		}
-
-		// If there is an error, make sure it terminates the process
-		if cmd.Err != nil {
-			if cmd.Process != nil {
-				cmd.Process.Kill()
-			}
-			return "", false, cmd.Err
-		}
-
-		// Save the command, and save the job to the map
-		remoteJob.command = cmd
-		remoteJob.processId = cmd.Process.Pid
-		rjr.availableJobs[uuidString] = remoteJob
-
-		isRunning := cmd.ProcessState == nil
-		return remoteJob.uuid.String(), isRunning, nil
 	}
+
+	uuidString := remoteJob.uuid.String()
+
+	rjr.mutex.RLock()
+	if _, exists := rjr.availableJobs[uuidString]; exists {
+		rjr.mutex.RUnlock()
+		return "", false, ErrDuplicateUUID
+	}
+	rjr.mutex.RUnlock()
+
+	rjr.mutex.Lock()
+	defer rjr.mutex.Unlock()
+
+	cmd := exec.Command(command[0], command[1:]...)
+	// Future features could store output in different streams and allow user to request specific stream
+	cmd.Stdout = remoteJob.outputStream
+	cmd.Stderr = remoteJob.outputStream
+
+	if err := cmd.Start(); err != nil {
+		return "", false, err
+	}
+
+	// If there is an error, make sure it terminates the process
+	if cmd.Err != nil {
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+		return "", false, cmd.Err
+	}
+
+	// Save the command, and save the job to the map
+	remoteJob.command = cmd
+	remoteJob.processId = cmd.Process.Pid
+	rjr.availableJobs[uuidString] = remoteJob
+
+	isRunning := cmd.ProcessState == nil
+	return remoteJob.uuid.String(), isRunning, nil
 }
 
 // RemoteJobRunner Stop will stop the passed in job ID returning the jobs
