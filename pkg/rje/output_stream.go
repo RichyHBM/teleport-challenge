@@ -59,7 +59,7 @@ func (oS *outputStream) GetBuffer() []byte {
 	defer oS.mutex.RUnlock()
 
 	var b []byte
-	copy(b, oS.buffer.Bytes())
+	b = append(b, oS.buffer.Bytes()...)
 	return b
 }
 
