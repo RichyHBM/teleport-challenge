@@ -3,6 +3,8 @@ package rje
 import (
 	"fmt"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 // These tests are questionable, as they depend on OS capabilities
@@ -12,7 +14,15 @@ func TestCGroups(t *testing.T) {
 		t.SkipNow()
 	}
 
-	if cgroup, err := SetupCGroupFromName("remote-job-challenge-test", false); err != nil {
+	uuid, err := uuid.NewRandom()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	uuidStr := uuid.String()
+
+	if cgroup, err := SetupCGroupFromName("remote-job-challenge-test-"+uuidStr, false); err != nil {
 		t.Error(fmt.Sprintf("CGroup creation failed: %s", err.Error()))
 	} else {
 		if err := cgroup.Close(); err != nil {
@@ -20,7 +30,7 @@ func TestCGroups(t *testing.T) {
 		}
 	}
 
-	if cgroup, err := SetupCGroupFromName("remote-job-challenge-test-limits", true); err != nil {
+	if cgroup, err := SetupCGroupFromName("remote-job-challenge-test-limits-"+uuidStr, true); err != nil {
 		t.Error(fmt.Sprintf("CGroup creation with limits failed: %s", err.Error()))
 	} else {
 		if err := cgroup.Close(); err != nil {
