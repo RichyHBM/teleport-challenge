@@ -86,10 +86,4 @@ func cleanup(grpcServer *grpc.Server, parentCGroup *rje.CGroup) {
 	})
 	defer timer.Stop()
 	grpcServer.GracefulStop()
-
-	if parentCGroup != nil {
-		if err := parentCGroup.Close(); err != nil {
-			fmt.Println(err)
-		}
-	}
 }

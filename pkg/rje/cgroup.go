@@ -65,12 +65,10 @@ func SetupCGroupFromName(cgroupName string, limitResources bool) (*CGroup, error
 
 func setupCGroup(cgroupPath string, limitResources bool) (*CGroup, error) {
 	// Create the subdirectory for cgroups
-	if _, err := os.Stat(cgroupPath); errors.Is(err, os.ErrNotExist) {
-		if err := os.Mkdir(cgroupPath, os.ModePerm); err != nil {
+	if err := os.Mkdir(cgroupPath, os.ModePerm); err != nil {
+		if !errors.Is(err, os.ErrExist) {
 			return nil, err
 		}
-	} else if err != nil && !errors.Is(err, os.ErrExist) {
-		return nil, err
 	}
 
 	cgroup := &CGroup{
