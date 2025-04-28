@@ -23,7 +23,7 @@ func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartReque
 		return nil, errors.New("no command sent")
 	}
 
-	if !IsAuthorized(req.Username, req.Command[0]) {
+	if err := IsAuthorized(req.Username, req.Command[0]); err != nil {
 		return nil, ErrUnAuth
 	}
 

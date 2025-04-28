@@ -20,17 +20,21 @@ func getAuthData() map[string][]string {
 	return authData
 }
 
-func IsAuthorized(user string, command string) bool {
+func IsAuthorized(user string, command string) error {
 	authData := getAuthData()
 	authorizations, isKnown := authData[user]
 	if !isKnown {
-		return false
+		return ErrUnAuth
 	}
 
 	// Special case for root
 	if len(authorizations) == 1 && authorizations[0] == "*" {
-		return true
+		return nil
 	}
 
-	return slices.Index(authorizations, command) >= 0
+	if slices.Index(authorizations, command) >= 0 {
+		return nil
+	}
+
+	return ErrUnAuth
 }
