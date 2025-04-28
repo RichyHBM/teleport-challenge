@@ -86,8 +86,6 @@ to identify the server endpoint:
    This will be used to fetch details on a specific job, such as if the job is still running,
    if it exited cleanly, etc.
 
-   In order to get full details on the job beyond if it is still running or not, user must call stop on the job first
-
 - Tail
    ```
    program tail --server=<server endpoint> --job=<job ID>
