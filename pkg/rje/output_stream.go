@@ -14,6 +14,7 @@ type outputStream struct {
 	buffer           *bytes.Buffer
 	connectedWriters []io.Writer
 	mutex            sync.RWMutex
+	closed           bool
 }
 
 // Creates a new OutputStream for use by the library
@@ -22,6 +23,7 @@ func newOutputStream() *outputStream {
 		buffer:           bytes.NewBuffer([]byte{}),
 		connectedWriters: []io.Writer{},
 		mutex:            sync.RWMutex{},
+		closed:           false,
 	}
 }
 
@@ -63,6 +65,10 @@ func (oS *outputStream) GetBuffer() []byte {
 	return b
 }
 
+func (oS *outputStream) IsClosed() bool {
+	return oS.closed
+}
+
 // OutputStream Connect method adds a new client io.Writer to the list
 // of connected clients
 func (oS *outputStream) Connect(newWriter io.Writer) error {
@@ -75,5 +81,6 @@ func (oS *outputStream) Connect(newWriter io.Writer) error {
 // OutputStream Close method to satisfy the io.WriterCloser interface
 // Currently does nothing
 func (oS *outputStream) Close() error {
+	oS.closed = true
 	return nil
 }
