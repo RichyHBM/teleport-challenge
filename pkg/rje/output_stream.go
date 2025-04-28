@@ -58,7 +58,9 @@ func (oS *outputStream) GetBuffer() []byte {
 	oS.mutex.RLock()
 	defer oS.mutex.RUnlock()
 
-	return oS.buffer.Bytes()
+	var b []byte
+	copy(b, oS.buffer.Bytes())
+	return b
 }
 
 // OutputStream Connect method adds a new client io.Writer to the list
