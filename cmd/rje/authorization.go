@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"slices"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -11,15 +10,15 @@ import (
 )
 
 var (
-	ErrUnAuth                     = grpc_status.Error(codes.PermissionDenied, "unauthorized")
-	authData  map[string][]string = map[string][]string{
-		"root":         {"*"},
-		"valid_client": {"echo", "cat", "ls", "tail", "sleep"},
+	ErrUnAuth                                = grpc_status.Error(codes.PermissionDenied, "unauthorized")
+	authData  map[string]map[string]struct{} = map[string]map[string]struct{}{
+		"root":         {"*": {}},
+		"valid_client": {"echo": {}, "cat": {}, "ls": {}, "tail": {}, "sleep": {}},
 	}
 )
 
 // This would load auth from somewhere
-func getAuthData() map[string][]string {
+func getAuthData() map[string]map[string]struct{} {
 	return authData
 }
 
@@ -43,11 +42,13 @@ func IsAuthorized(ctx context.Context, command string) error {
 	}
 
 	// Special case for root
-	if len(authorizations) == 1 && authorizations[0] == "*" {
+	_, hasWildcard := authorizations["*"]
+	if len(authorizations) == 1 && hasWildcard {
 		return nil
 	}
 
-	if slices.Index(authorizations, command) >= 0 {
+	_, hasCommand := authorizations[command]
+	if hasCommand {
 		return nil
 	}
 
