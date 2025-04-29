@@ -62,21 +62,23 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, bool, error) {
 	// Future features could store output in different streams and allow user to request specific stream
 	cmd.Stdout = remoteJob.outputStream
 	cmd.Stderr = remoteJob.outputStream
+	cmd.Env = []string{}
 
 	// Save the command, and save the job to the map
 	remoteJob.command = cmd
-	rjr.availableJobs[uuidString] = remoteJob
 
 	if err = cmd.Start(); err != nil {
 		return "", false, err
 	}
 
 	remoteJob.commandWaitFunc = func() {
-		cmd.Wait()
+		if err = remoteJob.command.Wait(); err == nil {
+			remoteJob.outputStream.Close()
+		}
 	}
 
 	go remoteJob.commandWaitFunc()
-	time.Sleep(time.Second / 10)
+	time.Sleep(time.Second /10)
 
 	// If there is an error, make sure it terminates the process
 	if remoteJob.command.Err != nil {
@@ -84,16 +86,17 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, bool, error) {
 			remoteJob.command.Process.Kill()
 			remoteJob.outputStream.Close()
 		}
+
 		return "", false, cmd.Err
 	}
 
+	rjr.availableJobs[uuidString] = remoteJob
 	isRunning := cmd.ProcessState == nil
 	return remoteJob.uuid.String(), isRunning, nil
 }
 
-// RemoteJobRunner Stop will stop the passed in job ID returning the jobs
-// exit code as well as if the process needed to be force ended
-func (rjr *RemoteJobRunner) Stop(uuid string) (int, bool, error) {
+// RemoteJobRunner Stop will stop the passed in job ID
+func (rjr *RemoteJobRunner) Stop(uuid string) error {
 	// Create map if it doesn't exist, check for exist both before and after locking
 	if rjr.availableJobs == nil {
 		rjr.mutex.Lock()
@@ -109,12 +112,12 @@ func (rjr *RemoteJobRunner) Stop(uuid string) (int, bool, error) {
 	job, hasJob := rjr.availableJobs[uuid]
 
 	if !hasJob {
-		return -1, false, ErrJobNotFound
+		return ErrJobNotFound
 	}
 
 	// If ProcessState is populated, the process has already ended
 	if job.command.ProcessState != nil {
-		return job.command.ProcessState.ExitCode(), job.command.ProcessState.Exited(), nil
+		return nil
 	}
 
 	if job.command.Process != nil {
@@ -123,15 +126,13 @@ func (rjr *RemoteJobRunner) Stop(uuid string) (int, bool, error) {
 		}
 	}
 
-	// Wait if the process is still running
-	if err := job.command.Wait(); err != nil {
-		fmt.Println(err)
-	}
-
 	if job.command.ProcessState != nil {
-		return job.command.ProcessState.ExitCode(), job.command.ProcessState.Exited(), nil
+		// Wait if the process is still running
+		if err := job.command.Wait(); err != nil && err.Error() != "signal: killed" {
+			return err
+		}
 	}
-	return 0, false, ErrNoProcessState
+	return nil
 }
 
 // RemoteJobRunner Status returns the current ProcessState which can be used to

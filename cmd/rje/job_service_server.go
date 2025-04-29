@@ -43,15 +43,11 @@ func (jSS *jobServiceServer) Stop(ctx context.Context, req *proto.JobIdRequest) 
 		return nil, errors.New("empty request")
 	}
 
-	exitCode, exitedClean, err := jSS.remoteJobRunner.Stop(req.JobId)
-	if err != nil {
+	if err := jSS.remoteJobRunner.Stop(req.JobId); err != nil {
 		return nil, err
 	}
 
-	return &proto.JobStopResponse{
-		ExitCode:   int32(exitCode),
-		ForceEnded: !exitedClean,
-	}, nil
+	return &proto.JobStopResponse{}, nil
 }
 
 // Status checks the passed in request data and calls the library Status method to query a job

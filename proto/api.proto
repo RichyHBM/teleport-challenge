@@ -34,8 +34,6 @@ message JobIdRequest {
 
 // Stop Response
 message JobStopResponse {
-  bool forceEnded = 1;
-  int32 exitCode = 2;
 }
 
 // Query Response

@@ -120,12 +120,12 @@ func stop(args []string) (string, error) {
 	defer cancel()
 
 	// Create account
-	jobResponse, err := jobServiceClient.Stop(ctx, &proto.JobIdRequest{JobId: flags.jobId})
+	_, err = jobServiceClient.Stop(ctx, &proto.JobIdRequest{JobId: flags.jobId})
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("Job ended with: %d, was force ended: %t\n", jobResponse.ExitCode, jobResponse.ForceEnded), nil
+	return fmt.Sprintln("Job ended"), nil
 }
 
 // Status issues a query call to the server, and prints out the resulting information

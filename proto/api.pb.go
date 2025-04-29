@@ -268,8 +268,6 @@ func (x *JobIdRequest) GetJobId() string {
 // Stop Response
 type JobStopResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ForceEnded    bool                   `protobuf:"varint,1,opt,name=forceEnded,proto3" json:"forceEnded,omitempty"`
-	ExitCode      int32                  `protobuf:"varint,2,opt,name=exitCode,proto3" json:"exitCode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -302,20 +300,6 @@ func (x *JobStopResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use JobStopResponse.ProtoReflect.Descriptor instead.
 func (*JobStopResponse) Descriptor() ([]byte, []int) {
 	return file_api_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *JobStopResponse) GetForceEnded() bool {
-	if x != nil {
-		return x.ForceEnded
-	}
-	return false
-}
-
-func (x *JobStopResponse) GetExitCode() int32 {
-	if x != nil {
-		return x.ExitCode
-	}
-	return 0
 }
 
 type JobStatusResponse struct {
@@ -426,12 +410,8 @@ const file_api_proto_rawDesc = "" +
 	"\x05jobId\x18\x01 \x01(\tR\x05jobId\x12'\n" +
 	"\x06Status\x18\x02 \x01(\x0e2\x0f.JobStartStatusR\x06Status\"$\n" +
 	"\fJobIdRequest\x12\x14\n" +
-	"\x05jobId\x18\x01 \x01(\tR\x05jobId\"M\n" +
-	"\x0fJobStopResponse\x12\x1e\n" +
-	"\n" +
-	"forceEnded\x18\x01 \x01(\bR\n" +
-	"forceEnded\x12\x1a\n" +
-	"\bexitCode\x18\x02 \x01(\x05R\bexitCode\"Y\n" +
+	"\x05jobId\x18\x01 \x01(\tR\x05jobId\"\x11\n" +
+	"\x0fJobStopResponse\"Y\n" +
 	"\x11JobStatusResponse\x12(\n" +
 	"\tjobStatus\x18\x01 \x01(\x0e2\n" +
 	".JobStatusR\tjobStatus\x12\x1a\n" +

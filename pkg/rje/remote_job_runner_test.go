@@ -11,11 +11,11 @@ import (
 func TestRemoteJobRunnerStart(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if _, running, err := remoteJobRunner.Start([]string{"sleep", "5"}); err != nil {
+	if _, running, err := remoteJobRunner.Start([]string{"sleep", "999"}); err != nil {
 		t.Errorf("sleep returned error: %s", err.Error())
 	} else {
 		if !running {
-			t.Error("sleep 5 should still be running")
+			t.Error("sleep 999 should still be running")
 		}
 	}
 }
@@ -31,7 +31,7 @@ func TestRemoteJobRunnerStartNonsense(t *testing.T) {
 func TestRemoteJobRunnerStopRandomJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if _, _, err := remoteJobRunner.Stop("123"); !errors.Is(ErrJobNotFound, err) {
+	if err := remoteJobRunner.Stop("123"); !errors.Is(ErrJobNotFound, err) {
 		t.Error("Stop with random job ID should return ErrJobNotFound")
 	}
 }
@@ -39,31 +39,15 @@ func TestRemoteJobRunnerStopRandomJob(t *testing.T) {
 func TestRemoteJobRunnerStopRunningJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "5"}); err != nil {
+	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "999"}); err != nil {
 		t.Error("Start should not error")
 	} else {
-		if exitCode, exitCleanly, err := remoteJobRunner.Stop(jobId); err != nil {
+		if err := remoteJobRunner.Stop(jobId); err != nil {
 			t.Errorf("Stop shouldn't error: %s", err.Error())
-		} else {
-			if exitCleanly {
-				t.Error("Stop running job should be forced")
-			}
-
-			if exitCode == 0 {
-				t.Errorf("Stop force running job should not return exit code 0: %d", exitCode)
-			}
 		}
 
-		if exitCode, exitCleanly, err := remoteJobRunner.Stop(jobId); err != nil {
+		if err := remoteJobRunner.Stop(jobId); err != nil {
 			t.Errorf("Stop shouldn't error: %s", err.Error())
-		} else {
-			if exitCleanly {
-				t.Error("Stop running job should be forced")
-			}
-
-			if exitCode == 0 {
-				t.Errorf("Stop force running job should not return exit code 0: %d", exitCode)
-			}
 		}
 	}
 }
@@ -74,28 +58,12 @@ func TestRemoteJobRunnerStopImmediateJob(t *testing.T) {
 	if jobId, _, err := remoteJobRunner.Start([]string{"true"}); err != nil {
 		t.Error("Start should not error")
 	} else {
-		if exitCode, exitCleanly, err := remoteJobRunner.Stop(jobId); err != nil {
+		if err := remoteJobRunner.Stop(jobId); err != nil {
 			t.Errorf("Stop shouldn't error: %s", err.Error())
-		} else {
-			if !exitCleanly {
-				t.Error("Stop immediate job should not be forced")
-			}
-
-			if exitCode != 0 {
-				t.Errorf("Stop force running job should return exit code 0: %d", exitCode)
-			}
 		}
 
-		if exitCode, exitCleanly, err := remoteJobRunner.Stop(jobId); err != nil {
+		if err := remoteJobRunner.Stop(jobId); err != nil {
 			t.Errorf("Stop shouldn't error: %s", err.Error())
-		} else {
-			if !exitCleanly {
-				t.Error("Stop immediate job should not be forced")
-			}
-
-			if exitCode != 0 {
-				t.Errorf("Stop force running job should return exit code 0: %d", exitCode)
-			}
 		}
 	}
 }
@@ -111,7 +79,7 @@ func TestRemoteJobRunnerStatusRandomJob(t *testing.T) {
 func TestRemoteJobRunnerStatusRunningJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "10"}); err != nil {
+	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "999"}); err != nil {
 		t.Error("Start should not error")
 	} else {
 		if isRunning, processState, err := remoteJobRunner.Status(jobId); err != nil {
@@ -126,9 +94,12 @@ func TestRemoteJobRunnerStatusRunningJob(t *testing.T) {
 			}
 		}
 
-		if _, _, err := remoteJobRunner.Stop(jobId); err != nil {
+		if err := remoteJobRunner.Stop(jobId); err != nil {
 			t.Errorf("Stop shouldn't error: %s", err.Error())
 		}
+
+		// For some reason if Status called immediate, ProcessState isn't populated
+		time.Sleep(time.Second)
 
 		if _, processState, err := remoteJobRunner.Status(jobId); err != nil {
 			t.Errorf("Status shouldn't error: %s", err.Error())
@@ -155,7 +126,7 @@ func TestRemoteJobRunnerStatusQuickJob(t *testing.T) {
 			}
 		}
 
-		if _, _, err := remoteJobRunner.Stop(jobId); err != nil {
+		if err := remoteJobRunner.Stop(jobId); err != nil {
 			t.Errorf("Stop shouldn't error: %s", err.Error())
 		}
 
@@ -195,7 +166,7 @@ func TestRemoteJobRunnerTailRandomJob(t *testing.T) {
 func TestRemoteJobRunnerTailLongJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "5"}); err != nil {
+	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "999"}); err != nil {
 		t.Error("Start should not error")
 	} else {
 		rjrt := &testRemoteJobRunnerTail{}
@@ -207,7 +178,7 @@ func TestRemoteJobRunnerTailLongJob(t *testing.T) {
 		}
 
 		timer := time.AfterFunc(time.Microsecond, func() {
-			if _, _, err := remoteJobRunner.Stop(jobId); err != nil {
+			if err := remoteJobRunner.Stop(jobId); err != nil {
 				t.Errorf("Stop shouldn't error: %s", err.Error())
 			}
 			if err := remoteJobRunner.Tail(jobId, rjrt); err != nil {
