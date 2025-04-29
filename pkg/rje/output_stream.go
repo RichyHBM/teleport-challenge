@@ -33,17 +33,28 @@ func (oS *outputStream) Write(p []byte) (n int, err error) {
 	oS.mutex.Lock()
 	defer oS.mutex.Unlock()
 
+	// Write to buffer first
+	writeN, writeErr := oS.buffer.Write(p)
+
 	// Write to all connected clients
 	nilWriters := []int{}
+	waitGroup := sync.WaitGroup{}
+
 	for i, connectedWriter := range oS.connectedWriters {
 		if connectedWriter != nil {
-			if _, err := connectedWriter.Write(p); err != nil {
-				fmt.Println("Error sending data to connected client")
-			}
+			waitGroup.Add(1)
+			go func() {
+				if _, err := connectedWriter.Write(p); err != nil {
+					fmt.Println("Error sending data to connected client")
+				}
+				waitGroup.Done()
+			}()
 		} else {
 			nilWriters = append(nilWriters, i)
 		}
 	}
+
+	waitGroup.Wait()
 
 	// Remove disconnected writers
 	if len(nilWriters) > 0 {
@@ -52,7 +63,7 @@ func (oS *outputStream) Write(p []byte) (n int, err error) {
 		}
 	}
 
-	return oS.buffer.Write(p)
+	return writeN, writeErr
 }
 
 // OutputStream GetBuffer returns the contents of the OutputStream
