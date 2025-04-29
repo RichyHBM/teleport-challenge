@@ -127,7 +127,6 @@ func (JobStatus) EnumDescriptor() ([]byte, []int) {
 type JobStartRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Command       []string               `protobuf:"bytes,1,rep,name=command,proto3" json:"command,omitempty"`
-	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -167,13 +166,6 @@ func (x *JobStartRequest) GetCommand() []string {
 		return x.Command
 	}
 	return nil
-}
-
-func (x *JobStartRequest) GetUsername() string {
-	if x != nil {
-		return x.Username
-	}
-	return ""
 }
 
 type JobStartResponse struct {
@@ -427,10 +419,9 @@ var File_api_proto protoreflect.FileDescriptor
 
 const file_api_proto_rawDesc = "" +
 	"\n" +
-	"\tapi.proto\"G\n" +
+	"\tapi.proto\"+\n" +
 	"\x0fJobStartRequest\x12\x18\n" +
-	"\acommand\x18\x01 \x03(\tR\acommand\x12\x1a\n" +
-	"\busername\x18\x02 \x01(\tR\busername\"Q\n" +
+	"\acommand\x18\x01 \x03(\tR\acommand\"Q\n" +
 	"\x10JobStartResponse\x12\x14\n" +
 	"\x05jobId\x18\x01 \x01(\tR\x05jobId\x12'\n" +
 	"\x06Status\x18\x02 \x01(\x0e2\x0f.JobStartStatusR\x06Status\"$\n" +

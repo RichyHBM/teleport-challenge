@@ -38,17 +38,17 @@ func readCertsFromFiles(certFile string, keyFile string, certAuthorityFile strin
 	}, nil
 }
 
-func loadCerts(certFile []byte, keyFile []byte, certAuthorityFile []byte) (credentials.TransportCredentials, string, error) {
+func loadCerts(certFile []byte, keyFile []byte, certAuthorityFile []byte) (credentials.TransportCredentials, error) {
 	// Load server certificates
 	cert, err := tls.X509KeyPair(certFile, keyFile)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	// Put the CA certificate into the certificate pool
 	certPool := x509.NewCertPool()
 	if !certPool.AppendCertsFromPEM(certAuthorityFile) {
-		return nil, "", errors.New("Failed to append trusted certificate to certificate pool")
+		return nil, errors.New("Failed to append trusted certificate to certificate pool")
 	}
 
 	// Create the TLS configuration
@@ -64,5 +64,5 @@ func loadCerts(certFile []byte, keyFile []byte, certAuthorityFile []byte) (crede
 	// Return new TLS credentials based on the TLS configuration
 	tls := credentials.NewTLS(tlsConfig)
 
-	return tls, cert.Leaf.Subject.CommonName, nil
+	return tls, nil
 }
