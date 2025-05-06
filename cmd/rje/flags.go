@@ -4,6 +4,7 @@ import (
 	"github.com/orsinium-labs/cliff"
 )
 
+// Arguments the user can pass in when using the start subcommand
 type StartArgs struct {
 	server   string
 	caFile   string
@@ -11,6 +12,7 @@ type StartArgs struct {
 	certFile string
 }
 
+// Arguments the user can pass in when using the stop, status, or tail subcommand
 type StopStatusTailArgs struct {
 	server   string
 	jobId    string
@@ -19,6 +21,7 @@ type StopStatusTailArgs struct {
 	certFile string
 }
 
+// Arguments the user can pass in when using the serve subcommand
 type ServeArgs struct {
 	port     int
 	caFile   string
@@ -26,6 +29,7 @@ type ServeArgs struct {
 	certFile string
 }
 
+// Function to parse args in to StartArgs
 func startFlags(args *StartArgs) cliff.Flags {
 	return cliff.Flags{
 		"server":    cliff.F(&args.server, 's', "localhost:4567", "Server address to issue job to"),
@@ -35,6 +39,7 @@ func startFlags(args *StartArgs) cliff.Flags {
 	}
 }
 
+// Function to parse args in to StopStatusTailArgs
 func stopStatusTailFlags(args *StopStatusTailArgs) cliff.Flags {
 	return cliff.Flags{
 		"server":    cliff.F(&args.server, 's', "localhost:4567", "Server address to issue job to"),
@@ -45,6 +50,7 @@ func stopStatusTailFlags(args *StopStatusTailArgs) cliff.Flags {
 	}
 }
 
+// Function to parse args in to ServeArgs
 func serveFlags(args *ServeArgs) cliff.Flags {
 	return cliff.Flags{
 		"port":      cliff.F(&args.port, 'p', 4567, "Port for server to listen on"),

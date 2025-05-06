@@ -121,7 +121,7 @@ qu+G1ayMXIrit6rmbG+iAGjCWJfHiu1m/A==
 )
 
 func startServer(certFile []byte, keyFile []byte, certAuthorityFile []byte) (func(), string, error) {
-	grpcServer, listener, err := createGrpcServer(0, certFile, keyFile, certAuthorityFile)
+	grpcServer, listener, jobService, err := createGrpcServer(0, certFile, keyFile, certAuthorityFile)
 	if err != nil {
 		return nil, "", err
 	}
@@ -135,6 +135,7 @@ func startServer(certFile []byte, keyFile []byte, certAuthorityFile []byte) (fun
 	return func() {
 		grpcServer.GracefulStop()
 		listener.Close()
+		jobService.Close()
 	}, listener.Addr().String(), nil
 }
 
@@ -186,14 +187,14 @@ func TestClientConnection(t *testing.T) {
 	}
 	defer shutdownServer()
 
-	validCommand := []string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "ls"}
+	validCommand := []string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "sleep", "1"}
 	failCommand := []string{"start", "-s", connAddr, "--ca-file", INVALID_CERT_AUTHORITY, "--cert-file", INVALID_CLIENT_PUB, "--key-file", INVALID_CLIENT_PRIV, "--", "ls"}
 
-	if err = start(failCommand); err == nil {
+	if _, err = start(failCommand); err == nil {
 		t.Error(fmt.Sprintf("Connection should fail with bad keys"))
 	}
 
-	if err = start(validCommand); err != nil && grpc_status.Code(err) != codes.Unimplemented {
+	if _, err = start(validCommand); err != nil {
 		t.Error(fmt.Sprintf("Connection should pass with good keys: %s", err.Error()))
 	}
 }
@@ -206,19 +207,20 @@ func TestClientCommands(t *testing.T) {
 	}
 	defer shutdownServer()
 
-	if err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "ls"}); err != nil && grpc_status.Code(err) != codes.Unimplemented {
+	jobId, err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "echo", "1234"})
+	if err != nil {
 		t.Error(fmt.Sprintf("Start should behave correctly: %s", err.Error()))
 	}
 
-	if err := status([]string{"status", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", "123"}); err != nil && grpc_status.Code(err) != codes.Unimplemented {
+	if _, err := status([]string{"status", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", jobId}); err != nil {
 		t.Error(fmt.Sprintf("Status should behave correctly: %s", err.Error()))
 	}
 
-	if err := stop([]string{"stop", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", "123"}); err != nil && grpc_status.Code(err) != codes.Unimplemented {
+	if _, err := stop([]string{"stop", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", jobId}); err != nil {
 		t.Error(fmt.Sprintf("Stop should behave correctly: %s", err.Error()))
 	}
 
-	if err := tail([]string{"tail", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", "123"}); err != nil && grpc_status.Code(err) != codes.Unimplemented {
+	if err := tail([]string{"tail", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", jobId}); err != nil {
 		t.Error(fmt.Sprintf("Tail should behave correctly: %s", err.Error()))
 	}
 }
@@ -231,11 +233,11 @@ func TestClientAuthorized(t *testing.T) {
 	}
 	defer shutdownServer()
 
-	if err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "ls"}); err != nil && grpc_status.Code(err) != codes.Unimplemented {
+	if _, err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "ls"}); err != nil && grpc_status.Code(err) != codes.Unimplemented {
 		t.Error(fmt.Sprintf("Start should behave correctly: %s", err.Error()))
 	}
 
-	if err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "foobar"}); !errors.Is(ErrUnAuth, err) {
+	if _, err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "foobar"}); !errors.Is(ErrUnAuth, err) {
 		t.Error(fmt.Sprintf("User shouldn't have access to foobar: %s", err.Error()))
 	}
 }
@@ -248,11 +250,11 @@ func TestClientUnAuthorized(t *testing.T) {
 	}
 	defer shutdownServer()
 
-	if err := start([]string{"start", "-s", connAddr, "--ca-file", INVALID_CERT_AUTHORITY, "--cert-file", INVALID_CLIENT_PUB, "--key-file", INVALID_CLIENT_PRIV, "--", "ls"}); !errors.Is(ErrUnAuth, err) {
+	if _, err := start([]string{"start", "-s", connAddr, "--ca-file", INVALID_CERT_AUTHORITY, "--cert-file", INVALID_CLIENT_PUB, "--key-file", INVALID_CLIENT_PRIV, "--", "ls"}); !errors.Is(ErrUnAuth, err) {
 		t.Error(fmt.Sprintf("User shouldn't have access to ls: %s", err.Error()))
 	}
 
-	if err := start([]string{"start", "-s", connAddr, "--ca-file", INVALID_CERT_AUTHORITY, "--cert-file", INVALID_CLIENT_PUB, "--key-file", INVALID_CLIENT_PRIV, "--", "cat"}); !errors.Is(ErrUnAuth, err) {
+	if _, err := start([]string{"start", "-s", connAddr, "--ca-file", INVALID_CERT_AUTHORITY, "--cert-file", INVALID_CLIENT_PUB, "--key-file", INVALID_CLIENT_PRIV, "--", "cat"}); !errors.Is(ErrUnAuth, err) {
 		t.Error(fmt.Sprintf("User shouldn't have access to cat: %s", err.Error()))
 	}
 }

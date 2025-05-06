@@ -4,40 +4,18 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"os"
 
 	"google.golang.org/grpc/credentials"
 )
 
+// Datatype to wrap the 3 required certificate files
 type certificateFileContents struct {
 	certificateFileContents   []byte
 	keyFileContents           []byte
 	certAuthorityFileContents []byte
 }
 
-func readCertsFromFiles(certFile string, keyFile string, certAuthorityFile string) (*certificateFileContents, error) {
-	certFileContent, err := os.ReadFile(certFile)
-	if err != nil {
-		return nil, err
-	}
-
-	keyFileContent, err := os.ReadFile(keyFile)
-	if err != nil {
-		return nil, err
-	}
-
-	certAuthorityFileContent, err := os.ReadFile(certAuthorityFile)
-	if err != nil {
-		return nil, err
-	}
-
-	return &certificateFileContents{
-		certificateFileContents:   certFileContent,
-		keyFileContents:           keyFileContent,
-		certAuthorityFileContents: certAuthorityFileContent,
-	}, nil
-}
-
+// Loads the passed in certificate file contents in to a credentials.TransportCredentials type usable by the GRPC server
 func loadCerts(certFile []byte, keyFile []byte, certAuthorityFile []byte) (credentials.TransportCredentials, error) {
 	// Load server certificates
 	cert, err := tls.X509KeyPair(certFile, keyFile)
