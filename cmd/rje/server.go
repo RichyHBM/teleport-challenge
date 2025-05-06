@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -10,36 +8,40 @@ import (
 	"time"
 
 	"github.com/orsinium-labs/cliff"
-	"github.com/richyhbm/teleport-challenge/pkg/rje"
 	"github.com/richyhbm/teleport-challenge/proto"
 	"google.golang.org/grpc"
 )
 
-func createGrpcServer(port int, certFile []byte, keyFile []byte, certAuthorityFile []byte) (*grpc.Server, net.Listener, error) {
+// Instanciates a new GRPC server, registering the RemoteJobService server to fulfill the
+// server actions
+func createGrpcServer(port int, certFile []byte, keyFile []byte, certAuthorityFile []byte) (*grpc.Server, net.Listener, *jobServiceServer, error) {
 	// Create a listener that listens to localhost
 	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	tlsCredentials, err := loadCerts(certFile, keyFile, certAuthorityFile)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	grpcServer := grpc.NewServer(grpc.Creds(tlsCredentials))
-	proto.RegisterJobsServiceServer(grpcServer, &jobServiceServer{})
+	jobService := &jobServiceServer{}
+	proto.RegisterJobsServiceServer(grpcServer, jobService)
 
-	return grpcServer, listener, nil
+	return grpcServer, listener, jobService, nil
 }
 
+// Creates a new server instance and runs it, listening on the port provided in the arguments
+// This method will block indefinitely
 func serve(args []string) error {
 	flags, err := cliff.Parse(os.Stderr, args, serveFlags)
 	if err != nil {
 		return err
 	}
 
-	grpcServer, listener, err := createGrpcServer(flags.port, []byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
+	grpcServer, listener, jobService, err := createGrpcServer(flags.port, []byte(flags.certFile), []byte(flags.keyFile), []byte(flags.caFile))
 	if err != nil {
 		return err
 	}
@@ -51,45 +53,9 @@ func serve(args []string) error {
 		})
 		defer timer.Stop()
 		grpcServer.GracefulStop()
+		jobService.Close()
 	}()
 
 	log.Printf("Starting up on %s", listener.Addr().String())
 	return grpcServer.Serve(listener)
-}
-
-type jobServiceServer struct {
-	proto.UnimplementedJobsServiceServer
-	remoteJobRunner rje.RemoteJobRunner
-}
-
-func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartRequest) (*proto.JobStartResponse, error) {
-	if req == nil {
-		return nil, errors.New("empty request")
-	}
-
-	return jSS.UnimplementedJobsServiceServer.Start(ctx, req)
-}
-
-func (jSS *jobServiceServer) Stop(ctx context.Context, req *proto.JobIdRequest) (*proto.JobStopResponse, error) {
-	if req == nil {
-		return nil, errors.New("empty request")
-	}
-
-	return jSS.UnimplementedJobsServiceServer.Stop(ctx, req)
-}
-
-func (jSS *jobServiceServer) Status(ctx context.Context, req *proto.JobIdRequest) (*proto.JobStatusResponse, error) {
-	if req == nil {
-		return nil, errors.New("empty request")
-	}
-
-	return jSS.UnimplementedJobsServiceServer.Status(ctx, req)
-}
-
-func (jSS *jobServiceServer) Tail(req *proto.JobIdRequest, stream grpc.ServerStreamingServer[proto.JobOutputResponse]) error {
-	if req == nil {
-		return errors.New("empty request")
-	}
-
-	return jSS.UnimplementedJobsServiceServer.Tail(req, stream)
 }

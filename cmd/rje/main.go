@@ -1,3 +1,28 @@
+/*
+rje is a program designed to run commands on an external server by use of a client
+both the client and server are provided as a single binary.
+
+When used it will execute a job on a remote system and allow users to query or follow
+the output of said job, as well as allowing the user to terminate the job if it does
+not terminate naturally.
+
+Usage:
+
+	rje <subcommand> -a <certificate authority file> -k <user/server certificate key> -c <user/server certificate>
+
+Subcommands:
+
+	start --server=<server endpoint> -- <command --arguments>
+		Once a job has been started, it will return a job ID to be used with the remaining subcommands
+
+	stop --server=<server endpoint> --job=<job ID>
+
+	status --server=<server endpoint> --job=<job ID>
+
+	tail --server=<server endpoint> --job=<job ID>
+
+	serve --port=4567
+*/
 package main
 
 import (
@@ -30,11 +55,29 @@ func main() {
 		return
 	}
 
+	// Wrapper to print the output of the method, and return any error
+	printWrapper := func(funcName func([]string) (string, error)) func([]string) error {
+		return func(wrapperArgs []string) error {
+			outputString, err := funcName(wrapperArgs)
+			if err != nil {
+				return err
+			}
+			fmt.Println(outputString)
+			return nil
+		}
+	}
+
+	// Want start to return just the job id, but print more info
+	startWrapper := func(wrapperArgs []string) (string, error) {
+		str, err := start(wrapperArgs)
+		return fmt.Sprintf("Job created: %s\n", str), err
+	}
+
 	// Custom logic for managing subcommands
 	commandFunctions := map[string]func([]string) error{
-		"start":  start,
-		"stop":   stop,
-		"status": status,
+		"start":  printWrapper(startWrapper),
+		"stop":   printWrapper(stop),
+		"status": printWrapper(status),
 		"tail":   tail,
 		"serve":  serve,
 	}
