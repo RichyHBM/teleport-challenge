@@ -69,15 +69,11 @@ to identify the server endpoint:
    ```
    program stop --server=<server endpoint> --job=<job ID>
    ```
-   This will end the specified job, returning it's exit code. This will be a blocking call
-   returning once the job has ended and returning to the user if it required calling Kill, and the jobs
-   exit code.
+   This will end the specified job. This will be a blocking call returning once the job has ended.
 
    The stop process will take the `os.Process` calling `.Kill()` on it if it has not already ended.
-   The return call will return the value in the variable `os.ProcessState.ExitCode`
 
-   If the program had already ended at the point at which stop is called, the field
-   `JobStopResponse.forceEnded` will be false, otherwise Kill will be called on the process and it will be true.
+   If the program had already ended at the point at which stop is called, the call will return instantly.
 
 - Query
    ```

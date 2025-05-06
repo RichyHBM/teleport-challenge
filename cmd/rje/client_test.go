@@ -8,99 +8,120 @@ import (
 
 	"github.com/spf13/pflag"
 	"google.golang.org/grpc/codes"
-	gstatus "google.golang.org/grpc/status"
+	grpc_status "google.golang.org/grpc/status"
 )
 
 // Just using contents of actual keys for ease, regenerate keys if deploying
 const (
+	// CA.pem
 	VALID_CERT_AUTHORITY = `-----BEGIN CERTIFICATE-----
-MIIBeDCCAR+gAwIBAgIUE+h2g5AUu73BD1YpvgpP1gl+cxMwCgYIKoZIzj0EAwIw
-EjEQMA4GA1UEAwwHUm9vdCBDQTAeFw0yNTA0MjIxNTQ2MDNaFw0yNjA0MjIxNTQ2
-MDNaMBIxEDAOBgNVBAMMB1Jvb3QgQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNC
-AATKuKji6qBz7+o73Dm1PHMBhCg98Mf6Ji1TNaUJCto4pT8c0Jd2porDtNn2nvft
-n70PJk4SJcqj7pFaXYp6Hdq3o1MwUTAdBgNVHQ4EFgQUA/kmwC648hw0OfGEMrkr
-BA6Z77swHwYDVR0jBBgwFoAUA/kmwC648hw0OfGEMrkrBA6Z77swDwYDVR0TAQH/
-BAUwAwEB/zAKBggqhkjOPQQDAgNHADBEAiBmlkdhl4YUFiqquFT6SAwTCv/0gfjR
-8OnpAisqELXfaAIgPJ57M4jmuv/ORDSxAPaoy+53/QsqLgb5rVGS3Tc0OGo=
+MIIBeDCCAR+gAwIBAgIUX0PSM84fikXPXS3ePXs6XxNdy1AwCgYIKoZIzj0EAwIw
+EjEQMA4GA1UEAwwHUm9vdCBDQTAeFw0yNTA0MjQyMjQwNTdaFw0yNjA0MjQyMjQw
+NTdaMBIxEDAOBgNVBAMMB1Jvb3QgQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNC
+AASOnDwKYR9+xX2QhvzJm3LCDY8WeC6f6PXlrr9jc+q8EuF5zOpOBztG/yFrPQeM
+VhnGcqcqYw05x4pVrOyFKmZjo1MwUTAdBgNVHQ4EFgQUXTbONPd2ubmK1N6BkVtd
+oR6scRYwHwYDVR0jBBgwFoAUXTbONPd2ubmK1N6BkVtdoR6scRYwDwYDVR0TAQH/
+BAUwAwEB/zAKBggqhkjOPQQDAgNHADBEAiA/0CKtCAbqzvzVgRm131OpZrBYXVuB
+apyEPQ2zCtMGeAIgSsAXC00zMBnyNWaH+T9R6xSZt7OSKL9Z08mwmERd+To=
 -----END CERTIFICATE-----
 `
-
+	// server.crt
 	VALID_SERVER_PUB = `-----BEGIN CERTIFICATE-----
-MIIBpzCCAUygAwIBAgIUL54wEtZC3qx8VCLilpmZ1RQ9QwIwCgYIKoZIzj0EAwIw
-EjEQMA4GA1UEAwwHUm9vdCBDQTAeFw0yNTA0MjIxNTQ2MDNaFw0yNjA0MjIxNTQ2
-MDNaMBExDzANBgNVBAMMBnNlcnZlcjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IA
-BK5uQyH32WbgB7sWkIfR5YJJtBvcbDcGW/yxzkmzyZVSg77LZ1gmTKKoLW+K3r1L
-b5QSrQsDiq/boxXagljZr5OjgYAwfjALBgNVHQ8EBAMCBDAwEwYDVR0lBAwwCgYI
-KwYBBQUHAwEwGgYDVR0RBBMwEYIJbG9jYWxob3N0hwR/AAABMB0GA1UdDgQWBBRd
-Ls2wZ3dOjkFGm3pep7kck/HdSjAfBgNVHSMEGDAWgBQD+SbALrjyHDQ58YQyuSsE
-DpnvuzAKBggqhkjOPQQDAgNJADBGAiEAv9k1mRTsNx6XmQi9hKHCszVUDddBhLnK
-Yt5HUrTYG8UCIQDGkB89pzlz5U6goAOeDWNZ0c1LAiIdFSSbSXPWnhH5Og==
+MIIBpzCCAUygAwIBAgIUL54wEtZC3qx8VCLilpmZ1RQ9QwQwCgYIKoZIzj0EAwIw
+EjEQMA4GA1UEAwwHUm9vdCBDQTAeFw0yNTA0MjQyMjQwNTdaFw0yNjA0MjQyMjQw
+NTdaMBExDzANBgNVBAMMBnNlcnZlcjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IA
+BDkKCFoT95kqDCqaIlQAlh1tLDTFT/w+W5DaCWUDIXMq/c4Z+fAbE1BTnmb1gVOC
+4v43fzlWFgFk8sFkFFTuk9WjgYAwfjALBgNVHQ8EBAMCBDAwEwYDVR0lBAwwCgYI
+KwYBBQUHAwEwGgYDVR0RBBMwEYIJbG9jYWxob3N0hwR/AAABMB0GA1UdDgQWBBTm
+XVy04kBZYnqGh05AB/Pn0k5d2zAfBgNVHSMEGDAWgBRdNs4093a5uYrU3oGRW12h
+HqxxFjAKBggqhkjOPQQDAgNJADBGAiEA8lGSEY5S3Eb/eoPLJcuF5KvsasNPfmK+
+dBk5YpzbISgCIQDw1XwF3cCNIUFYceqrRnSV8RmboYf4kcU4EbYH5c+dQw==
 -----END CERTIFICATE-----
 `
-
+	// server.key
 	VALID_SERVER_PRIV = `-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIOPB5NUn8ryCI5cvawTp28mRomWBMii6i1ahPOG7zeKMoAoGCCqGSM49
-AwEHoUQDQgAErm5DIffZZuAHuxaQh9Hlgkm0G9xsNwZb/LHOSbPJlVKDvstnWCZM
-oqgtb4revUtvlBKtCwOKr9ujFdqCWNmvkw==
+MHcCAQEEIKWs3+S8mO7oJYTLNOegM92miGc7M2/7S1E6AKFWN19ZoAoGCCqGSM49
+AwEHoUQDQgAEOQoIWhP3mSoMKpoiVACWHW0sNMVP/D5bkNoJZQMhcyr9zhn58BsT
+UFOeZvWBU4Li/jd/OVYWAWTywWQUVO6T1Q==
 -----END EC PRIVATE KEY-----
 `
-
+	// client.crt
 	VALID_CLIENT_PUB = `-----BEGIN CERTIFICATE-----
-MIIBrDCCAVKgAwIBAgIUL54wEtZC3qx8VCLilpmZ1RQ9QwMwCgYIKoZIzj0EAwIw
-EjEQMA4GA1UEAwwHUm9vdCBDQTAeFw0yNTA0MjIxNTQ2MDNaFw0yNjA0MjIxNTQ2
-MDNaMBcxFTATBgNVBAMMDHZhbGlkX2NsaWVudDBZMBMGByqGSM49AgEGCCqGSM49
-AwEHA0IABD/FNHXN7SFTGcE13cqeMAOiJDC70Smr6FBhprFwUImDhPRfvIoaZ60e
-f2aKwVBrpigWRheFPWzGDIjGxO+1ln2jgYAwfjALBgNVHQ8EBAMCBDAwEwYDVR0l
+MIIBrDCCAVKgAwIBAgIUL54wEtZC3qx8VCLilpmZ1RQ9QwUwCgYIKoZIzj0EAwIw
+EjEQMA4GA1UEAwwHUm9vdCBDQTAeFw0yNTA0MjQyMjQwNTdaFw0yNjA0MjQyMjQw
+NTdaMBcxFTATBgNVBAMMDHZhbGlkX2NsaWVudDBZMBMGByqGSM49AgEGCCqGSM49
+AwEHA0IABGeBdGlyRUqUl/3QxVkMiQA5FDIEN+IqC+CKbpep341cVMwrJ0x2Gao6
+nhmsC67Dm7GeId4f+tEtcOjOBhBLGgajgYAwfjALBgNVHQ8EBAMCBDAwEwYDVR0l
 BAwwCgYIKwYBBQUHAwIwGgYDVR0RBBMwEYIJbG9jYWxob3N0hwR/AAABMB0GA1Ud
-DgQWBBTXBdmprZy4kp65TMPaAGbq2Z3+kjAfBgNVHSMEGDAWgBQD+SbALrjyHDQ5
-8YQyuSsEDpnvuzAKBggqhkjOPQQDAgNIADBFAiEA7xBJxSOX+W5ZueDLqjPmFt7c
-ExcntRCkAb1vUI085a4CIH/IPxT8HvsKXNslGh0hUBRqjR26WdtXasqhfZiCJ8eK
+DgQWBBQmc1AZOWQ4yAiqQr7S32cmcRU6njAfBgNVHSMEGDAWgBRdNs4093a5uYrU
+3oGRW12hHqxxFjAKBggqhkjOPQQDAgNIADBFAiEA4KKu8m9pgGKkX9zd3WImk3Oo
+Oz9IxD0BqYXUpLQds3UCIHS3p3MH3rx/gHLYPtoUObJLyJHXkLN1srfw22FCcMoK
 -----END CERTIFICATE-----
 `
-
+	// client.key
 	VALID_CLIENT_PRIV = `-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIEch3ZLOJ2l2yI1KijKE8vmF36N88ZZw0FiJXvVrPXKToAoGCCqGSM49
-AwEHoUQDQgAEP8U0dc3tIVMZwTXdyp4wA6IkMLvRKavoUGGmsXBQiYOE9F+8ihpn
-rR5/ZorBUGumKBZGF4U9bMYMiMbE77WWfQ==
+MHcCAQEEIAc43Z7+OGYRq46xV8j6IC9nWaiHqXLslrPEgUhu8++loAoGCCqGSM49
+AwEHoUQDQgAEZ4F0aXJFSpSX/dDFWQyJADkUMgQ34ioL4Ipul6nfjVxUzCsnTHYZ
+qjqeGawLrsObsZ4h3h/60S1w6M4GEEsaBg==
 -----END EC PRIVATE KEY-----
 `
-
+	// CA_fail.pem
 	INVALID_CERT_AUTHORITY = `-----BEGIN CERTIFICATE-----
-MIIBlTCCATugAwIBAgIUdvOkfnRhMThwMRuLbGz007yD664wCgYIKoZIzj0EAwIw
-EjEQMA4GA1UEAwwHUm9vdCBDQTAeFw0yNTA0MjIxNTQ2MDNaFw0yNjA0MjIxNTQ2
-MDNaMBIxEDAOBgNVBAMMB1Jvb3QgQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNC
-AARC3EMxElcZCtz+mC4UFCkAzVOG1MOA1z4jxNk76L1gOWu4mrdb4KYgmRv3QRfl
-ISU5RshaGY227IqPPnoZHxtFo28wbTAdBgNVHQ4EFgQUwvSvg5Ng6ImqSEyNVokB
-R4Y0iTUwHwYDVR0jBBgwFoAUwvSvg5Ng6ImqSEyNVokBR4Y0iTUwDwYDVR0TAQH/
+MIIBlTCCATugAwIBAgIUUNTKPwlDXQbksOQTpKm63sLT6BwwCgYIKoZIzj0EAwIw
+EjEQMA4GA1UEAwwHUm9vdCBDQTAeFw0yNTA0MjQyMjQwNTdaFw0yNjA0MjQyMjQw
+NTdaMBIxEDAOBgNVBAMMB1Jvb3QgQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNC
+AATLx50TBU3Yr+s6QhMB05kqCbNi+sKoCBIJd1E4vRJhVmldul7OexUr+Le/xHjE
+XYdU1J0eb8E+1XWrJAeRQ9ZSo28wbTAdBgNVHQ4EFgQUoKPai9oZM2DSp8HUYszb
+hH+hwxgwHwYDVR0jBBgwFoAUoKPai9oZM2DSp8HUYszbhH+hwxgwDwYDVR0TAQH/
 BAUwAwEB/zAaBgNVHREEEzARgglsb2NhbGhvc3SHBAAAAAAwCgYIKoZIzj0EAwID
-SAAwRQIgdF1GFiq59GTN/Rldl7PvCmrESvmYIn8GISqex3C/XBsCIQChDBDWmZCh
-m5WkKZfCObOG92xTQfr/u/QhL8U8DdFhcQ==
+SAAwRQIhAPJuvMj5v1f/yMHc7GqTmahllIWmIM1a3vHFhjh8PriuAiBYTjTsdjST
+CMtmxTqQbRrLDhrMUX7tTAJIIEwgd3Nn7g==
 -----END CERTIFICATE-----
 `
-
+	// server_fail.crt
+	INVALID_SERVER_PUB = `-----BEGIN CERTIFICATE-----
+MIIBpjCCAUygAwIBAgIUUz/ze0Cu1D/o2gN//6L6U2a7lkUwCgYIKoZIzj0EAwIw
+EjEQMA4GA1UEAwwHUm9vdCBDQTAeFw0yNTA0MjQyMjQwNThaFw0yNjA0MjQyMjQw
+NThaMBExDzANBgNVBAMMBnNlcnZlcjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IA
+BG3tfFPvx+5pQhTL3u0szsX45vFAuOfpihYNqtD0ijfkbPuYLcES9r28d843JOKd
+LYIVPZlzIa5e40RvPaSrALGjgYAwfjALBgNVHQ8EBAMCBDAwEwYDVR0lBAwwCgYI
+KwYBBQUHAwEwGgYDVR0RBBMwEYIJbG9jYWxob3N0hwR/AAABMB0GA1UdDgQWBBSK
+uFyiywirrZCuqtboDd6ZjxNrvzAfBgNVHSMEGDAWgBSgo9qL2hkzYNKnwdRizNuE
+f6HDGDAKBggqhkjOPQQDAgNIADBFAiALblI3akDnn59wjYUx9hK+F3XBpnpjX4rs
+yhIt6hAtyQIhALr1QWfECsWQM5w3OQRS1G1C9L8FLQdZcfQm8am7JATu
+-----END CERTIFICATE-----
+`
+	// server_fail.key
+	INVALID_SERVER_PRIV = `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIOUheUUoU2pgxQbtDJZ/5Ep4ka3f4hOjOYkasG1STkCsoAoGCCqGSM49
+AwEHoUQDQgAEbe18U+/H7mlCFMve7SzOxfjm8UC45+mKFg2q0PSKN+Rs+5gtwRL2
+vbx3zjck4p0tghU9mXMhrl7jRG89pKsAsQ==
+-----END EC PRIVATE KEY-----
+`
+	// client_fail.crt
 	INVALID_CLIENT_PUB = `-----BEGIN CERTIFICATE-----
-MIIBqjCCAU+gAwIBAgIUUz/ze0Cu1D/o2gN//6L6U2a7lkQwCgYIKoZIzj0EAwIw
-EjEQMA4GA1UEAwwHUm9vdCBDQTAeFw0yNTA0MjIxNTQ2MDNaFw0yNjA0MjIxNTQ2
-MDNaMBQxEjAQBgNVBAMMCWZhaWxfdXNlcjBZMBMGByqGSM49AgEGCCqGSM49AwEH
-A0IABHZaJW6qtmg8/Svs7dP0bf3Y2+wkxhK6yRLs6FsJLgHT6OSRzVOiaG+suGUB
-zU9/Q925wGbe1pyRkI2dYubMDXCjgYAwfjALBgNVHQ8EBAMCBDAwEwYDVR0lBAww
+MIIBqDCCAU+gAwIBAgIUUz/ze0Cu1D/o2gN//6L6U2a7lkYwCgYIKoZIzj0EAwIw
+EjEQMA4GA1UEAwwHUm9vdCBDQTAeFw0yNTA0MjQyMjQwNThaFw0yNjA0MjQyMjQw
+NThaMBQxEjAQBgNVBAMMCWZhaWxfdXNlcjBZMBMGByqGSM49AgEGCCqGSM49AwEH
+A0IABCo1zeCAwDillp95B7ZWAOTr/NwOD9yor1CQDbwxHcPDKlCxcHgM+qrvhtWs
+jFyK4req5mxvogBowliXx4rtZvyjgYAwfjALBgNVHQ8EBAMCBDAwEwYDVR0lBAww
 CgYIKwYBBQUHAwIwGgYDVR0RBBMwEYIJbG9jYWxob3N0hwR/AAABMB0GA1UdDgQW
-BBRjv6w1L/zdfldRJb8VMO1WuoFWWDAfBgNVHSMEGDAWgBTC9K+Dk2DoiapITI1W
-iQFHhjSJNTAKBggqhkjOPQQDAgNJADBGAiEA6n6iR9sqs+v49E85adenjpFY6OXU
-wCn/efr4W3ILissCIQCN/C+XFa5eOCaI1OLqlcLXsonmv9JmuDM14KysLncX4w==
+BBSxF1g54ygnUGiG4L+8cP143Qe6mTAfBgNVHSMEGDAWgBSgo9qL2hkzYNKnwdRi
+zNuEf6HDGDAKBggqhkjOPQQDAgNHADBEAiBSUpLZKyJP66kOFPHbJw+p+spDstAN
+OgjFk8SWSEmgkwIgV0i/boauOYQdXJAGcieXNmceUtJ9Vgh7w5U9Wpz5Wlw=
 -----END CERTIFICATE-----
 `
-
+	// client_fail.key
 	INVALID_CLIENT_PRIV = `-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIMUHGbYzzSYNY/p8Vp5Dx37OTAlgbm+RYgI8YAclg+QGoAoGCCqGSM49
-AwEHoUQDQgAEdlolbqq2aDz9K+zt0/Rt/djb7CTGErrJEuzoWwkuAdPo5JHNU6Jo
-b6y4ZQHNT39D3bnAZt7WnJGQjZ1i5swNcA==
+MHcCAQEEIASCVutGYAKEhdFxi4k8dMcrP6SCCfX5+zXmPDBnAZMZoAoGCCqGSM49
+AwEHoUQDQgAEKjXN4IDAOKWWn3kHtlYA5Ov83A4P3KivUJANvDEdw8MqULFweAz6
+qu+G1ayMXIrit6rmbG+iAGjCWJfHiu1m/A==
 -----END EC PRIVATE KEY-----
 `
 )
 
 func startServer(certFile []byte, keyFile []byte, certAuthorityFile []byte) (func(), string, error) {
-	grpcServer, listener, err := createGrpcServer(0, certFile, keyFile, certAuthorityFile, false)
+	grpcServer, listener, jobService, err := createGrpcServer(0, certFile, keyFile, certAuthorityFile, false)
 	if err != nil {
 		return nil, "", err
 	}
@@ -114,6 +135,7 @@ func startServer(certFile []byte, keyFile []byte, certAuthorityFile []byte) (fun
 	return func() {
 		grpcServer.GracefulStop()
 		listener.Close()
+		jobService.Close()
 	}, listener.Addr().String(), nil
 }
 
@@ -165,14 +187,14 @@ func TestClientConnection(t *testing.T) {
 	}
 	defer shutdownServer()
 
-	validCommand := []string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "ls"}
+	validCommand := []string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "sleep", "1"}
 	failCommand := []string{"start", "-s", connAddr, "--ca-file", INVALID_CERT_AUTHORITY, "--cert-file", INVALID_CLIENT_PUB, "--key-file", INVALID_CLIENT_PRIV, "--", "ls"}
 
-	if err = start(failCommand); err == nil {
+	if _, err = start(failCommand); err == nil {
 		t.Error(fmt.Sprintf("Connection should fail with bad keys"))
 	}
 
-	if err = start(validCommand); err != nil && gstatus.Code(err) != codes.Unimplemented {
+	if _, err = start(validCommand); err != nil {
 		t.Error(fmt.Sprintf("Connection should pass with good keys: %s", err.Error()))
 	}
 }
@@ -185,19 +207,54 @@ func TestClientCommands(t *testing.T) {
 	}
 	defer shutdownServer()
 
-	if err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "ls"}); err != nil && gstatus.Code(err) != codes.Unimplemented {
+	jobId, err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "echo", "1234"})
+	if err != nil {
 		t.Error(fmt.Sprintf("Start should behave correctly: %s", err.Error()))
 	}
 
-	if err := status([]string{"status", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", "123"}); err != nil && gstatus.Code(err) != codes.Unimplemented {
+	if _, err := status([]string{"status", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", jobId}); err != nil {
 		t.Error(fmt.Sprintf("Status should behave correctly: %s", err.Error()))
 	}
 
-	if err := stop([]string{"stop", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", "123"}); err != nil && gstatus.Code(err) != codes.Unimplemented {
+	if _, err := stop([]string{"stop", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", jobId}); err != nil {
 		t.Error(fmt.Sprintf("Stop should behave correctly: %s", err.Error()))
 	}
 
-	if err := tail([]string{"tail", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", "123"}); err != nil && gstatus.Code(err) != codes.Unimplemented {
+	if err := tail([]string{"tail", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "-j", jobId}); err != nil {
 		t.Error(fmt.Sprintf("Tail should behave correctly: %s", err.Error()))
+	}
+}
+
+func TestClientAuthorized(t *testing.T) {
+	shutdownServer, connAddr, err := startServer([]byte(VALID_SERVER_PUB), []byte(VALID_SERVER_PRIV), []byte(VALID_CERT_AUTHORITY))
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	defer shutdownServer()
+
+	if _, err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "ls"}); err != nil && grpc_status.Code(err) != codes.Unimplemented {
+		t.Error(fmt.Sprintf("Start should behave correctly: %s", err.Error()))
+	}
+
+	if _, err := start([]string{"start", "-s", connAddr, "--ca-file", VALID_CERT_AUTHORITY, "--cert-file", VALID_CLIENT_PUB, "--key-file", VALID_CLIENT_PRIV, "--", "foobar"}); !errors.Is(ErrUnAuth, err) {
+		t.Error(fmt.Sprintf("User shouldn't have access to foobar: %s", err.Error()))
+	}
+}
+
+func TestClientUnAuthorized(t *testing.T) {
+	shutdownServer, connAddr, err := startServer([]byte(INVALID_SERVER_PUB), []byte(INVALID_SERVER_PRIV), []byte(INVALID_CERT_AUTHORITY))
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	defer shutdownServer()
+
+	if _, err := start([]string{"start", "-s", connAddr, "--ca-file", INVALID_CERT_AUTHORITY, "--cert-file", INVALID_CLIENT_PUB, "--key-file", INVALID_CLIENT_PRIV, "--", "ls"}); !errors.Is(ErrUnAuth, err) {
+		t.Error(fmt.Sprintf("User shouldn't have access to ls: %s", err.Error()))
+	}
+
+	if _, err := start([]string{"start", "-s", connAddr, "--ca-file", INVALID_CERT_AUTHORITY, "--cert-file", INVALID_CLIENT_PUB, "--key-file", INVALID_CLIENT_PRIV, "--", "cat"}); !errors.Is(ErrUnAuth, err) {
+		t.Error(fmt.Sprintf("User shouldn't have access to cat: %s", err.Error()))
 	}
 }
