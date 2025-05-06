@@ -21,6 +21,14 @@ func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartReque
 		return nil, errors.New("empty request")
 	}
 
+	if len(req.Command) == 0 {
+		return nil, errors.New("no command sent")
+	}
+
+	if err := IsAuthorized(ctx, req.Command[0]); err != nil {
+		return nil, ErrUnAuth
+	}
+
 	jobId, isRunning, err := jSS.remoteJobRunner.Start(req.Command)
 	if err != nil {
 		return nil, err

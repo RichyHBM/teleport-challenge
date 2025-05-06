@@ -15,6 +15,10 @@ openssl x509 -req -in client.csr -CA CA.pem -CAkey CA.key -CAcreateserial -out c
 openssl ecparam -name prime256v1 -genkey -noout -out CA_fail.key
 openssl req -x509 -new -nodes -key CA_fail.key -sha256 -days 365 -out CA_fail.pem -subj "/CN=Root CA" -addext "subjectAltName = DNS:localhost,IP:0.0.0.0"
 
+openssl ecparam -name prime256v1 -genkey -noout -out server_fail.key
+openssl req -new -key server_fail.key -out server_fail.csr -config ./server.conf
+openssl x509 -req -in server_fail.csr -CA CA_fail.pem -CAkey CA_fail.key -CAcreateserial -out server_fail.crt -days 365 -sha256 -extensions req_ext -extfile ./server.conf
+
 openssl ecparam -name prime256v1 -genkey -noout -out client_fail.key
 openssl req -new -key client_fail.key -out client_fail.csr -subj "/CN=fail_user" -config ./client.conf
 openssl x509 -req -in client_fail.csr -CA CA_fail.pem -CAkey CA_fail.key -CAcreateserial -out client_fail.crt -days 365 -sha256 -extensions req_ext -extfile ./client.conf
