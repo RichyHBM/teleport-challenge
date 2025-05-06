@@ -13,6 +13,7 @@ import (
 type jobServiceServer struct {
 	proto.UnimplementedJobsServiceServer
 	remoteJobRunner rje.RemoteJobRunner
+	useCgroups      bool
 }
 
 // Start checks the passed in request data and calls the library Start method to initiate a new job
@@ -29,7 +30,7 @@ func (jSS *jobServiceServer) Start(ctx context.Context, req *proto.JobStartReque
 		return nil, ErrUnAuth
 	}
 
-	jobId, isRunning, err := jSS.remoteJobRunner.Start(req.Command)
+	jobId, isRunning, err := jSS.remoteJobRunner.Start(req.Command, jSS.useCgroups)
 	if err != nil {
 		return nil, err
 	}

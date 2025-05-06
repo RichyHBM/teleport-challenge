@@ -31,7 +31,7 @@ type RemoteJobRunner struct {
 // RemoteJobRunner Start runs the passed in command + arguments returning a job ID
 // used to query and action against the job.
 // It will also return if the command exited.
-func (rjr *RemoteJobRunner) Start(command []string) (string, bool, error) {
+func (rjr *RemoteJobRunner) Start(command []string, useCgroup bool) (string, bool, error) {
 	// Create map if it doesn't exist, check for exist both before and after locking
 	if rjr.availableJobs == nil {
 		rjr.mutex.Lock()
@@ -41,7 +41,7 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, bool, error) {
 		rjr.mutex.Unlock()
 	}
 
-	remoteJob, err := newRemoteJob()
+	remoteJob, err := newRemoteJob(useCgroup)
 	if err != nil {
 		return "", false, err
 	}
@@ -78,7 +78,7 @@ func (rjr *RemoteJobRunner) Start(command []string) (string, bool, error) {
 	}
 
 	go remoteJob.commandWaitFunc()
-	time.Sleep(time.Second /10)
+	time.Sleep(time.Second / 10)
 
 	// If there is an error, make sure it terminates the process
 	if remoteJob.command.Err != nil {

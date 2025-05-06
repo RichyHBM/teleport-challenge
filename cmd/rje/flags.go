@@ -23,10 +23,11 @@ type StopStatusTailArgs struct {
 
 // Arguments the user can pass in when using the serve subcommand
 type ServeArgs struct {
-	port     int
-	caFile   string
-	keyFile  string
-	certFile string
+	port        int
+	caFile      string
+	keyFile     string
+	certFile    string
+	skipCgroups bool
 }
 
 // Function to parse args in to StartArgs
@@ -53,9 +54,10 @@ func stopStatusTailFlags(args *StopStatusTailArgs) cliff.Flags {
 // Function to parse args in to ServeArgs
 func serveFlags(args *ServeArgs) cliff.Flags {
 	return cliff.Flags{
-		"port":      cliff.F(&args.port, 'p', 4567, "Port for server to listen on"),
-		"ca-file":   cliff.F(&args.caFile, 'a', "", "Certificate Authority file contents"),
-		"key-file":  cliff.F(&args.keyFile, 'k', "", "Certificate Key file contents"),
-		"cert-file": cliff.F(&args.certFile, 'c', "", "Certificate file contents"),
+		"port":         cliff.F(&args.port, 'p', 4567, "Port for server to listen on"),
+		"ca-file":      cliff.F(&args.caFile, 'a', "", "Certificate Authority file contents"),
+		"key-file":     cliff.F(&args.keyFile, 'k', "", "Certificate Key file contents"),
+		"cert-file":    cliff.F(&args.certFile, 'c', "", "Certificate file contents"),
+		"skip-cgroups": cliff.F(&args.skipCgroups, 's', false, "Skip creating of cgroups"),
 	}
 }

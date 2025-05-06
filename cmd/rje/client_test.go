@@ -121,7 +121,7 @@ qu+G1ayMXIrit6rmbG+iAGjCWJfHiu1m/A==
 )
 
 func startServer(certFile []byte, keyFile []byte, certAuthorityFile []byte) (func(), string, error) {
-	grpcServer, listener, jobService, err := createGrpcServer(0, certFile, keyFile, certAuthorityFile)
+	grpcServer, listener, jobService, err := createGrpcServer(0, certFile, keyFile, certAuthorityFile, false)
 	if err != nil {
 		return nil, "", err
 	}

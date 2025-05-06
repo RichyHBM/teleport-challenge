@@ -17,10 +17,11 @@ type remoteJob struct {
 	outputStream    *outputStream
 	command         *exec.Cmd
 	commandWaitFunc func()
+	cgroup          *CGroup
 }
 
 // Initialised a new RemoteJob with an empty command
-func newRemoteJob() (*remoteJob, error) {
+func newRemoteJob(useCgroup bool) (*remoteJob, error) {
 	uuid, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -31,11 +32,19 @@ func newRemoteJob() (*remoteJob, error) {
 		return nil, ErrNoOutputStream
 	}
 
+	var cgroup *CGroup
+	if useCgroup {
+		if cgroup, err = SetupCGroupFromName("remote-job-challenge/"+uuid.String(), true); err != nil {
+			return nil, err
+		}
+	}
+
 	return &remoteJob{
 		uuid:            uuid,
 		outputStream:    outputStream,
 		command:         nil,
 		commandWaitFunc: func() {},
+		cgroup:          cgroup,
 	}, nil
 }
 
@@ -50,4 +59,12 @@ func (rJ *remoteJob) IsProcessRunning() bool {
 	}
 
 	return !rJ.outputStream.IsClosed()
+}
+
+// Close any remaining resources for the remote job
+func (job *remoteJob) Close() error {
+	if job.cgroup != nil {
+		return job.cgroup.Close()
+	}
+	return nil
 }

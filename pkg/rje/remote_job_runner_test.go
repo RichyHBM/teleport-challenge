@@ -11,7 +11,7 @@ import (
 func TestRemoteJobRunnerStart(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if _, running, err := remoteJobRunner.Start([]string{"sleep", "999"}); err != nil {
+	if _, running, err := remoteJobRunner.Start([]string{"sleep", "999"}, false); err != nil {
 		t.Errorf("sleep returned error: %s", err.Error())
 	} else {
 		if !running {
@@ -23,7 +23,7 @@ func TestRemoteJobRunnerStart(t *testing.T) {
 func TestRemoteJobRunnerStartNonsense(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if _, _, err := remoteJobRunner.Start([]string{"foobar"}); err == nil {
+	if _, _, err := remoteJobRunner.Start([]string{"foobar"}, false); err == nil {
 		t.Error("foobar should error")
 	}
 }
@@ -39,7 +39,7 @@ func TestRemoteJobRunnerStopRandomJob(t *testing.T) {
 func TestRemoteJobRunnerStopRunningJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "999"}); err != nil {
+	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "999"}, false); err != nil {
 		t.Error("Start should not error")
 	} else {
 		if err := remoteJobRunner.Stop(jobId); err != nil {
@@ -55,7 +55,7 @@ func TestRemoteJobRunnerStopRunningJob(t *testing.T) {
 func TestRemoteJobRunnerStopImmediateJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if jobId, _, err := remoteJobRunner.Start([]string{"true"}); err != nil {
+	if jobId, _, err := remoteJobRunner.Start([]string{"true"}, false); err != nil {
 		t.Error("Start should not error")
 	} else {
 		if err := remoteJobRunner.Stop(jobId); err != nil {
@@ -79,7 +79,7 @@ func TestRemoteJobRunnerStatusRandomJob(t *testing.T) {
 func TestRemoteJobRunnerStatusRunningJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "999"}); err != nil {
+	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "999"}, false); err != nil {
 		t.Error("Start should not error")
 	} else {
 		if isRunning, processState, err := remoteJobRunner.Status(jobId); err != nil {
@@ -114,7 +114,7 @@ func TestRemoteJobRunnerStatusRunningJob(t *testing.T) {
 func TestRemoteJobRunnerStatusQuickJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if jobId, _, err := remoteJobRunner.Start([]string{"true"}); err != nil {
+	if jobId, _, err := remoteJobRunner.Start([]string{"true"}, false); err != nil {
 		t.Error("Start should not error")
 	} else {
 		if isRunning, _, err := remoteJobRunner.Status(jobId); err != nil {
@@ -166,7 +166,7 @@ func TestRemoteJobRunnerTailRandomJob(t *testing.T) {
 func TestRemoteJobRunnerTailLongJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "999"}); err != nil {
+	if jobId, _, err := remoteJobRunner.Start([]string{"sleep", "999"}, false); err != nil {
 		t.Error("Start should not error")
 	} else {
 		rjrt := &testRemoteJobRunnerTail{}
@@ -196,7 +196,7 @@ func TestRemoteJobRunnerTailLongJob(t *testing.T) {
 func TestRemoteJobRunnerTailImmediateJob(t *testing.T) {
 	remoteJobRunner := &RemoteJobRunner{}
 
-	if jobId, _, err := remoteJobRunner.Start([]string{"echo", "5"}); err != nil {
+	if jobId, _, err := remoteJobRunner.Start([]string{"echo", "5"}, false); err != nil {
 		t.Error("Start should not error")
 	} else {
 		rjrt := &testRemoteJobRunnerTail{}
