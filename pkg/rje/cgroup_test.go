@@ -2,6 +2,7 @@ package rje
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -23,7 +24,11 @@ func TestCGroups(t *testing.T) {
 	uuidStr := uuid.String()
 
 	if cgroup, err := SetupCGroupFromName("remote-job-challenge-test-"+uuidStr, false); err != nil {
-		t.Error(fmt.Sprintf("CGroup creation failed: %s", err.Error()))
+		if strings.Contains(err.Error(), "permission denied") {
+			t.SkipNow()
+		} else {
+			t.Error(fmt.Sprintf("CGroup creation failed: %s", err.Error()))
+		}
 	} else {
 		if err := cgroup.Close(); err != nil {
 			t.Error(fmt.Sprintf("Closing CGroup failed: %s", err.Error()))
