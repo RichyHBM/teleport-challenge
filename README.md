@@ -2,7 +2,7 @@
 
 This is my implementation for the level 4 software engineer position at Teleport.
 
-[showcase](https://github.com/RichyHBM/teleport-challenge/raw/refs/heads/main/docs/showcase.mp4)
+https://github.com/user-attachments/assets/81a8bd4b-6009-4e9e-96ed-a7a09d287a78
 
 The following is taken from the careers challenge repo at
 https://github.com/gravitational/careers/blob/main/challenges/systems/challenge-1.md
