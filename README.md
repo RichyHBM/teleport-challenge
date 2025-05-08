@@ -2,7 +2,9 @@
 
 This is my implementation for the level 4 software engineer position at Teleport.
 
-The following is taken from the careers challenge repo at 
+[!Showcase](./docs/showcase.mp4)
+
+The following is taken from the careers challenge repo at
 https://github.com/gravitational/careers/blob/main/challenges/systems/challenge-1.md
 
 # Summary
@@ -105,7 +107,7 @@ coverage as that will take too long.
 ### Dependencies
 
 Please write as much of your own code as possible. Avoid relying on third
-party dependencies for key components of the challenge (i.e., cgroups, output 
+party dependencies for key components of the challenge (i.e., cgroups, output
 streaming, authorization). The server should also not rely on any shell scripts,
 external binaries or use containers to execute jobs.
 
